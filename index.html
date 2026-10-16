@@ -78,6 +78,7 @@
       color: #d1d5db;
     }
     .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
     .layer-display {
       background: #0d0f14;
       border-radius: 14px;
@@ -137,11 +138,11 @@
 
   <div class="container">
     <h1>🎧 MFE Vocal Engine</h1>
-    <div class="subtitle">Mondegreen Familiarity Engine • Quantized Loop Queueing</div>
+    <div class="subtitle">Mondegreen Familiarity Engine • Mobile Auto-Stream</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
 
-    <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
+    <span class="status-badge" id="status-badge">Tap 'START ENGINE' to stream audio</span>
 
     <div class="layer-display">
       <div class="layer-row">
@@ -228,6 +229,25 @@
           counter: { pan: 0.35, el: 'lbl-counter' },
           echo: { pan: -0.50, el: 'lbl-echo' }
         };
+
+        // GitHub Raw Audio Manifest (extracted from your repository screenshots)
+        this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
+        this.beatManifest = [
+          { name: 'Heavy Runnin (Beat 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
+          { name: 'Steady Coming (Beat 2)', path: 'beats/beats2.Steady Coming.mp3' },
+          { name: 'Have Heaven, Honey (Beat 3)', path: 'beats/beats3.Have Heaven, Honey.mp3' },
+          { name: 'Ray of Light (Beat 4)', path: 'beats/beats4.Ray of Light.mp3' },
+          { name: 'Sunshine Rider (Beat 5)', path: 'beats/beats5.sunshine rider.mp3' }
+        ];
+        this.vocalManifest = [
+          { name: 'Sunshine Rider (Vocal 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
+          { name: 'Ray of Light (Vocal 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
+          { name: 'Ray of Light (Vocal 3)', path: 'vocals/vocal3.Ray of Light.mp3' },
+          { name: 'Have Heaven, Honey (Vocal 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
+          { name: 'Steady Coming (Vocal 5)', path: 'vocals/vocal5.Steady Coming.mp3' },
+          { name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' },
+          { name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' }
+        ];
       }
 
       initContext() {
@@ -240,70 +260,87 @@
         }
       }
 
-      createWarmBeatBuffer() {
-        const sr = this.ctx.sampleRate;
-        const length = sr * 4;
-        const buffer = this.ctx.createBuffer(2, length, sr);
-        const L = buffer.getChannelData(0);
-        const R = buffer.getChannelData(1);
-
-        for (let i = 0; i < length; i++) {
-          const t = i / sr;
-          let kick = 0;
-          const k1 = t % 1.0;
-          if (k1 < 0.2) {
-            kick = Math.sin(2 * Math.PI * (55 - k1 * 120) * k1) * Math.exp(-k1 * 12);
-          }
-          let snare = 0;
-          const s1 = (t + 0.5) % 1.0;
-          if (s1 < 0.15) {
-            snare = (Math.random() * 2 - 1) * Math.exp(-s1 * 18) * 0.25;
-          }
-          const chordFreqs = (t < 2.0) ? [174.61, 220.00, 261.63, 329.63] : [130.81, 164.81, 196.00, 246.94];
-          let pad = 0;
-          chordFreqs.forEach(f => {
-            pad += Math.sin(2 * Math.PI * f * t) * 0.07;
-          });
-
-          const mix = kick * 0.65 + snare * 0.2 + pad;
-          L[i] = mix;
-          R[i] = mix;
+      calculateRMS(buffer) {
+        const data = buffer.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 100) {
+          sum += data[i] * data[i];
         }
-        return buffer;
+        return Math.sqrt(sum / (data.length / 100));
       }
 
-      createVocalFormantBuffer(phraseName, baseFreq, formantFreq) {
-        const sr = this.ctx.sampleRate;
-        const length = sr * 4;
-        const buffer = this.ctx.createBuffer(2, length, sr);
-        const L = buffer.getChannelData(0);
-        const R = buffer.getChannelData(1);
+      sliceAudioBuffer(fullBuffer, fileName, numSlices = 6) {
+        const slices = [];
+        const totalSamples = fullBuffer.length;
+        const sliceSamples = Math.floor(totalSamples / numSlices);
+        const channels = fullBuffer.numberOfChannels;
+        const sampleRate = fullBuffer.sampleRate;
 
-        for (let i = 0; i < length; i++) {
-          const t = i / sr;
-          const cadence = Math.sin(2 * Math.PI * 1.5 * t) * 0.5 + 0.5;
-          const fundamental = Math.sin(2 * Math.PI * baseFreq * t);
-          const formant = Math.sin(2 * Math.PI * formantFreq * t) * 0.4;
-          const signal = (fundamental + formant) * cadence * 0.25;
+        for (let i = 0; i < numSlices; i++) {
+          const startSample = i * sliceSamples;
+          const sliceBuffer = this.ctx.createBuffer(channels, sliceSamples, sampleRate);
 
-          L[i] = signal;
-          R[i] = signal;
+          for (let ch = 0; ch < channels; ch++) {
+            const channelData = fullBuffer.getChannelData(ch);
+            const sliceData = sliceBuffer.getChannelData(ch);
+            sliceData.set(channelData.subarray(startSample, startSample + sliceSamples));
+          }
+
+          const rms = this.calculateRMS(sliceBuffer);
+          if (rms > 0.005) {
+            slices.push({
+              name: `${fileName} [Slice ${i + 1}]`,
+              buffer: sliceBuffer
+            });
+          }
         }
-        return buffer;
+        return slices;
       }
 
-      startApp() {
+      async fetchAndDecode(path) {
+        const fullUrl = encodeURI(this.baseUrl + path);
+        const res = await fetch(fullUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const arrayBuf = await res.arrayBuffer();
+        return await new Promise((resolve, reject) => {
+          this.ctx.decodeAudioData(arrayBuf, resolve, reject);
+        });
+      }
+
+      async startApp() {
         this.initContext();
-
-        this.beatBuffers = [{ name: 'Lo-Fi Master Beat', buffer: this.createWarmBeatBuffer() }];
-        this.vocalBuffers = [
-          { name: 'Vocal Stem 1 ("A-pen-a-lum sings")', buffer: this.createVocalFormantBuffer('A-pen-a-lum sings', 220, 700) },
-          { name: 'Vocal Stem 2 ("Heh-va war-ma planet")', buffer: this.createVocalFormantBuffer('Heh-va war-ma planet', 174, 500) },
-          { name: 'Vocal Stem 3 ("Dah-va dee-pa wa-da")', buffer: this.createVocalFormantBuffer('Dah-va dee-pa wa-da', 261, 900) },
-          { name: 'Vocal Stem 4 ("Glow-a boo lie-ta")', buffer: this.createVocalFormantBuffer('Glow-a boo lie-ta', 329, 1100) }
-        ];
-
         document.getElementById('start-btn').style.display = 'none';
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge loading';
+
+        let loadedCount = 0;
+        const totalFiles = this.beatManifest.length + this.vocalManifest.length;
+
+        // Fetch Beats
+        for (let item of this.beatManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading beats from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.beatBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed beat file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
+        // Fetch Vocals
+        for (let item of this.vocalManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading vocals from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.vocalBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed vocal file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
         this.syncEngineState();
       }
 
@@ -322,7 +359,7 @@
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = `Active • 1 Beat | ${this.vocalBuffers.length} Vocal Stems Ready`;
+        statusEl.innerText = `Active • ${this.beatBuffers.length} Beats | ${this.vocalBuffers.length} Vocal Stems Streamed`;
       }
 
       getRandomBuffer(role) {
@@ -370,7 +407,6 @@
 
         gainNode.connect(this.ctx.destination);
 
-        // Quantized Loop Transition: Checks if a replay was queued before selecting a random stem
         source.onended = () => {
           if (this.activeRoles.has(role)) {
             if (this.queuedStem[role]) {
@@ -413,7 +449,1975 @@
         }
       }
 
-      // Quantized Loop Queueing: Flags current motif to replay at the end of the loop
+      replayMotif() {
+        let activeCount = 0;
+        this.layerOrder.forEach(role => {
+          if (this.activeRoles.has(role) && this.activeNodes[role]) {
+            activeCount++;
+            this.queuedStem[role] = this.lastPlayedStem[role];
+            const config = this.panConfig[role];
+            const currentName = this.lastPlayedStem[role] ? this.lastPlayedStem[role].name : 'Active';
+            document.getElementById(config.el).innerText = `⌛ ${currentName} (Replaying Next)`;
+          }
+        });
+
+        if (activeCount === 0) {
+          this.syncEngineState();
+        } else {
+          const statusEl = document.getElementById('status-badge');
+          statusEl.className = 'status-badge active';
+          statusEl.innerText = 'Replay Queued • Will repeat after current loop finishes';
+        }
+      }
+
+      swapStems() {
+        this.layerOrder.forEach(role => {
+          if (this.activeRoles.has(role)) {
+            this.queuedStem[role] = null;
+            this.playRoleNext(role);
+          }
+        });
+      }
+
+      triggerSnap() {
+        this.initContext();
+
+        ['lead', 'counter', 'echo'].forEach(role => {
+          this.activeRoles.delete(role);
+          this.queuedStem[role] = null;
+          this.stopRoleNode(role);
+          document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+        });
+
+        if (this.beatBuffers.length > 0) {
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+
+        if (this.vocalBuffers.length > 0) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+      }
+
+      stopAll() {
+        this.activeRoles.clear();
+        this.layerOrder.forEach(role => {
+          this.queuedStem[role] = null;
+          this.stopRoleNode(role);
+          document.getElementById(this.panConfig[role].el).innerText = 'Stopped';
+        });
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge';
+        statusEl.innerText = 'Stopped • Tap START or AGAIN to resume';
+      }
+    }
+
+    const mfe = new MFEAudioEngine();
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MFE Vocal Engine</title>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --card: #161922;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #c084fc;
+      --accent-pink: #f472b6;
+      --accent-red: #ef4444;
+      --text: #f3f4f6;
+      --subtext: #9ca3af;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      box-sizing: border-box;
+      border: 1px solid #272c3a;
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 1.4rem;
+      color: #fff;
+      text-align: center;
+    }
+    .subtitle {
+      color: var(--subtext);
+      font-size: 0.8rem;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .btn-start {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+      border: none;
+      padding: 16px;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+      margin-bottom: 16px;
+      transition: transform 0.1s ease;
+    }
+    .btn-start:active { transform: scale(0.97); }
+    .status-badge {
+      display: block;
+      text-align: center;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      background: #252a37;
+      color: #d1d5db;
+    }
+    .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .layer-display {
+      background: #0d0f14;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      border: 1px solid #1f2937;
+    }
+    .layer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a202c;
+      font-size: 0.85rem;
+    }
+    .layer-row:last-child { border-bottom: none; }
+    .layer-role { font-weight: 700; width: 140px; }
+    .layer-file {
+      color: var(--subtext);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 8px;
+    }
+    .layer-pan { font-size: 0.7rem; background: #252a37; padding: 2px 6px; border-radius: 4px; }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .btn-ctrl {
+      background: #1f2430;
+      color: var(--text);
+      border: 1px solid #374151;
+      padding: 14px 6px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .btn-ctrl:active { transform: scale(0.95); }
+    .btn-ctrl .icon { font-size: 1.4rem; }
+    .btn-ctrl .sub { font-size: 0.65rem; font-weight: 400; color: var(--subtext); }
+    .btn-more { border-color: rgba(59, 130, 246, 0.6); color: #60a5fa; background: rgba(59, 130, 246, 0.12); }
+    .btn-less { border-color: rgba(245, 158, 11, 0.6); color: #fcd34d; background: rgba(245, 158, 11, 0.12); }
+    .btn-snap { border-color: rgba(16, 185, 129, 0.6); color: #34d399; background: rgba(16, 185, 129, 0.12); }
+    .btn-stop { border-color: rgba(239, 68, 68, 0.6); color: #f87171; grid-column: span 3; margin-top: 4px; background: #2a1619; padding: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🎧 MFE Vocal Engine</h1>
+    <div class="subtitle">Mondegreen Familiarity Engine • Mobile Auto-Stream</div>
+
+    <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
+
+    <span class="status-badge" id="status-badge">Tap 'START ENGINE' to stream audio</span>
+
+    <div class="layer-display">
+      <div class="layer-row">
+        <span class="layer-role" style="color: #60a5fa;">BEAT (Motor Floor)</span>
+        <span class="layer-file" id="lbl-beat">Muted</span>
+        <span class="layer-pan">Center</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #34d399;">ANCHOR (R1 85%)</span>
+        <span class="layer-file" id="lbl-anchor">Muted</span>
+        <span class="layer-pan">Center</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #fcd34d;">LEAD (R2 70%)</span>
+        <span class="layer-file" id="lbl-lead">Muted</span>
+        <span class="layer-pan">Left 25%</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #c084fc;">COUNTER (R3 55%)</span>
+        <span class="layer-file" id="lbl-counter">Muted</span>
+        <span class="layer-pan">Right 35%</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #f472b6;">ECHO (R4 40%)</span>
+        <span class="layer-file" id="lbl-echo">Muted</span>
+        <span class="layer-pan">Left 50%</span>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <button class="btn-ctrl btn-more" onclick="mfe.addLayer()">
+        <span class="icon">➕</span>
+        MORE
+        <span class="sub">+1 Vocal Stream</span>
+      </button>
+
+      <button class="btn-ctrl btn-less" onclick="mfe.removeLayer()">
+        <span class="icon">➖</span>
+        LESS
+        <span class="sub">-1 Vocal Stream</span>
+      </button>
+
+      <button class="btn-ctrl" onclick="mfe.replayMotif()">
+        <span class="icon">🔁</span>
+        AGAIN
+        <span class="sub">Queue Replay</span>
+      </button>
+
+      <button class="btn-ctrl" onclick="mfe.swapStems()">
+        <span class="icon">🔀</span>
+        DIFFERENT
+        <span class="sub">Shuffle Vocals</span>
+      </button>
+
+      <button class="btn-ctrl btn-snap" onclick="mfe.triggerSnap()">
+        <span class="icon">⚡</span>
+        SNAP
+        <span class="sub">1 Beat + 1 Voice</span>
+      </button>
+
+      <button class="btn-ctrl btn-stop" onclick="mfe.stopAll()">
+        <span class="icon">🛑</span>
+        STOP ALL
+        <span class="sub">Immediate Silence</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    class MFEAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.beatBuffers = [];
+        this.vocalBuffers = [];
+        this.activeRoles = new Set();
+        this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.lastPlayedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.queuedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.layerOrder = ['beat', 'anchor', 'lead', 'counter', 'echo'];
+        this.panConfig = {
+          beat: { pan: 0.0, el: 'lbl-beat' },
+          anchor: { pan: 0.0, el: 'lbl-anchor' },
+          lead: { pan: -0.25, el: 'lbl-lead' },
+          counter: { pan: 0.35, el: 'lbl-counter' },
+          echo: { pan: -0.50, el: 'lbl-echo' }
+        };
+
+        // GitHub Raw Audio Manifest (extracted from your repository screenshots)
+        this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
+        this.beatManifest = [
+          { name: 'Heavy Runnin (Beat 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
+          { name: 'Steady Coming (Beat 2)', path: 'beats/beats2.Steady Coming.mp3' },
+          { name: 'Have Heaven, Honey (Beat 3)', path: 'beats/beats3.Have Heaven, Honey.mp3' },
+          { name: 'Ray of Light (Beat 4)', path: 'beats/beats4.Ray of Light.mp3' },
+          { name: 'Sunshine Rider (Beat 5)', path: 'beats/beats5.sunshine rider.mp3' }
+        ];
+        this.vocalManifest = [
+          { name: 'Sunshine Rider (Vocal 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
+          { name: 'Ray of Light (Vocal 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
+          { name: 'Ray of Light (Vocal 3)', path: 'vocals/vocal3.Ray of Light.mp3' },
+          { name: 'Have Heaven, Honey (Vocal 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
+          { name: 'Steady Coming (Vocal 5)', path: 'vocals/vocal5.Steady Coming.mp3' },
+          { name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' },
+          { name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' }
+        ];
+      }
+
+      initContext() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      calculateRMS(buffer) {
+        const data = buffer.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 100) {
+          sum += data[i] * data[i];
+        }
+        return Math.sqrt(sum / (data.length / 100));
+      }
+
+      sliceAudioBuffer(fullBuffer, fileName, numSlices = 6) {
+        const slices = [];
+        const totalSamples = fullBuffer.length;
+        const sliceSamples = Math.floor(totalSamples / numSlices);
+        const channels = fullBuffer.numberOfChannels;
+        const sampleRate = fullBuffer.sampleRate;
+
+        for (let i = 0; i < numSlices; i++) {
+          const startSample = i * sliceSamples;
+          const sliceBuffer = this.ctx.createBuffer(channels, sliceSamples, sampleRate);
+
+          for (let ch = 0; ch < channels; ch++) {
+            const channelData = fullBuffer.getChannelData(ch);
+            const sliceData = sliceBuffer.getChannelData(ch);
+            sliceData.set(channelData.subarray(startSample, startSample + sliceSamples));
+          }
+
+          const rms = this.calculateRMS(sliceBuffer);
+          if (rms > 0.005) {
+            slices.push({
+              name: `${fileName} [Slice ${i + 1}]`,
+              buffer: sliceBuffer
+            });
+          }
+        }
+        return slices;
+      }
+
+      async fetchAndDecode(path) {
+        const fullUrl = encodeURI(this.baseUrl + path);
+        const res = await fetch(fullUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const arrayBuf = await res.arrayBuffer();
+        return await new Promise((resolve, reject) => {
+          this.ctx.decodeAudioData(arrayBuf, resolve, reject);
+        });
+      }
+
+      async startApp() {
+        this.initContext();
+        document.getElementById('start-btn').style.display = 'none';
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge loading';
+
+        let loadedCount = 0;
+        const totalFiles = this.beatManifest.length + this.vocalManifest.length;
+
+        // Fetch Beats
+        for (let item of this.beatManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading beats from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.beatBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed beat file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
+        // Fetch Vocals
+        for (let item of this.vocalManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading vocals from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.vocalBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed vocal file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
+        this.syncEngineState();
+      }
+
+      syncEngineState() {
+        this.initContext();
+
+        if (this.beatBuffers.length > 0 && !this.activeRoles.has('beat')) {
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+
+        if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `Active • ${this.beatBuffers.length} Beats | ${this.vocalBuffers.length} Vocal Stems Streamed`;
+      }
+
+      getRandomBuffer(role) {
+        const pool = (role === 'beat') ? this.beatBuffers : this.vocalBuffers;
+        if (pool.length === 0) return null;
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      stopRoleNode(role) {
+        if (this.activeNodes[role]) {
+          try {
+            this.activeNodes[role].source.onended = null;
+            this.activeNodes[role].source.stop();
+          } catch(e) {}
+          this.activeNodes[role] = null;
+        }
+      }
+
+      playRoleNext(role, explicitStem = null) {
+        if (!this.activeRoles.has(role)) return;
+
+        this.initContext();
+        this.stopRoleNode(role);
+
+        const stem = explicitStem || this.getRandomBuffer(role);
+        if (!stem) return;
+
+        const config = this.panConfig[role];
+        const source = this.ctx.createBufferSource();
+        source.buffer = stem.buffer;
+        source.loop = false;
+
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (panner) panner.pan.value = config.pan;
+
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.value = (role === 'beat') ? 0.75 : 0.85;
+
+        if (panner) {
+          source.connect(panner);
+          panner.connect(gainNode);
+        } else {
+          source.connect(gainNode);
+        }
+
+        gainNode.connect(this.ctx.destination);
+
+        source.onended = () => {
+          if (this.activeRoles.has(role)) {
+            if (this.queuedStem[role]) {
+              const queued = this.queuedStem[role];
+              this.queuedStem[role] = null;
+              this.playRoleNext(role, queued);
+            } else {
+              this.playRoleNext(role);
+            }
+          }
+        };
+
+        source.start(0);
+
+        this.activeNodes[role] = { source, gainNode, stem };
+        this.lastPlayedStem[role] = stem;
+        document.getElementById(config.el).innerText = stem.name;
+      }
+
+      addLayer() {
+        const vocalRoles = ['lead', 'counter', 'echo'];
+        for (let role of vocalRoles) {
+          if (!this.activeRoles.has(role)) {
+            this.activeRoles.add(role);
+            this.playRoleNext(role);
+            break;
+          }
+        }
+      }
+
+      removeLayer() {
+        const vocalRoles = ['echo', 'counter', 'lead'];
+        for (let role of vocalRoles) {
+          if (this.activeRoles.has(role)) {
+            this.activeRoles.delete(role);
+            this.stopRoleNode(role);
+            document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+            break;
+          }
+        }
+      }
+
+      replayMotif() {
+        let activeCount = 0;
+        this.layerOrder.forEach(role => {
+          if (this.activeRoles.has(role) && this.activeNodes[role]) {
+            activeCount++;
+            this.queuedStem[role] = this.lastPlayedStem[role];
+            const config = this.panConfig[role];
+            const currentName = this.lastPlayedStem[role] ? this.lastPlayedStem[role].name : 'Active';
+            document.getElementById(config.el).innerText = `⌛ ${currentName} (Replaying Next)`;
+          }
+        });
+
+        if (activeCount === 0) {
+          this.syncEngineState();
+        } else {
+          const statusEl = document.getElementById('status-badge');
+          statusEl.className = 'status-badge active';
+          statusEl.innerText = 'Replay Queued • Will repeat after current loop finishes';
+        }
+      }
+
+      swapStems() {
+        this.layerOrder.forEach(role => {
+          if (this.activeRoles.has(role)) {
+            this.queuedStem[role] = null;
+            this.playRoleNext(role);
+          }
+        });
+      }
+
+      triggerSnap() {
+        this.initContext();
+
+        ['lead', 'counter', 'echo'].forEach(role => {
+          this.activeRoles.delete(role);
+          this.queuedStem[role] = null;
+          this.stopRoleNode(role);
+          document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+        });
+
+        if (this.beatBuffers.length > 0) {
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+
+        if (this.vocalBuffers.length > 0) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+      }
+
+      stopAll() {
+        this.activeRoles.clear();
+        this.layerOrder.forEach(role => {
+          this.queuedStem[role] = null;
+          this.stopRoleNode(role);
+          document.getElementById(this.panConfig[role].el).innerText = 'Stopped';
+        });
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge';
+        statusEl.innerText = 'Stopped • Tap START or AGAIN to resume';
+      }
+    }
+
+    const mfe = new MFEAudioEngine();
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MFE Vocal Engine</title>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --card: #161922;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #c084fc;
+      --accent-pink: #f472b6;
+      --accent-red: #ef4444;
+      --text: #f3f4f6;
+      --subtext: #9ca3af;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      box-sizing: border-box;
+      border: 1px solid #272c3a;
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 1.4rem;
+      color: #fff;
+      text-align: center;
+    }
+    .subtitle {
+      color: var(--subtext);
+      font-size: 0.8rem;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .btn-start {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+      border: none;
+      padding: 16px;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+      margin-bottom: 16px;
+      transition: transform 0.1s ease;
+    }
+    .btn-start:active { transform: scale(0.97); }
+    .status-badge {
+      display: block;
+      text-align: center;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      background: #252a37;
+      color: #d1d5db;
+    }
+    .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .layer-display {
+      background: #0d0f14;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      border: 1px solid #1f2937;
+    }
+    .layer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a202c;
+      font-size: 0.85rem;
+    }
+    .layer-row:last-child { border-bottom: none; }
+    .layer-role { font-weight: 700; width: 140px; }
+    .layer-file {
+      color: var(--subtext);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 8px;
+    }
+    .layer-pan { font-size: 0.7rem; background: #252a37; padding: 2px 6px; border-radius: 4px; }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .btn-ctrl {
+      background: #1f2430;
+      color: var(--text);
+      border: 1px solid #374151;
+      padding: 14px 6px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .btn-ctrl:active { transform: scale(0.95); }
+    .btn-ctrl .icon { font-size: 1.4rem; }
+    .btn-ctrl .sub { font-size: 0.65rem; font-weight: 400; color: var(--subtext); }
+    .btn-more { border-color: rgba(59, 130, 246, 0.6); color: #60a5fa; background: rgba(59, 130, 246, 0.12); }
+    .btn-less { border-color: rgba(245, 158, 11, 0.6); color: #fcd34d; background: rgba(245, 158, 11, 0.12); }
+    .btn-snap { border-color: rgba(16, 185, 129, 0.6); color: #34d399; background: rgba(16, 185, 129, 0.12); }
+    .btn-stop { border-color: rgba(239, 68, 68, 0.6); color: #f87171; grid-column: span 3; margin-top: 4px; background: #2a1619; padding: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🎧 MFE Vocal Engine</h1>
+    <div class="subtitle">Mondegreen Familiarity Engine • Mobile Auto-Stream</div>
+
+    <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
+
+    <span class="status-badge" id="status-badge">Tap 'START ENGINE' to stream audio</span>
+
+    <div class="layer-display">
+      <div class="layer-row">
+        <span class="layer-role" style="color: #60a5fa;">BEAT (Motor Floor)</span>
+        <span class="layer-file" id="lbl-beat">Muted</span>
+        <span class="layer-pan">Center</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #34d399;">ANCHOR (R1 85%)</span>
+        <span class="layer-file" id="lbl-anchor">Muted</span>
+        <span class="layer-pan">Center</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #fcd34d;">LEAD (R2 70%)</span>
+        <span class="layer-file" id="lbl-lead">Muted</span>
+        <span class="layer-pan">Left 25%</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #c084fc;">COUNTER (R3 55%)</span>
+        <span class="layer-file" id="lbl-counter">Muted</span>
+        <span class="layer-pan">Right 35%</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #f472b6;">ECHO (R4 40%)</span>
+        <span class="layer-file" id="lbl-echo">Muted</span>
+        <span class="layer-pan">Left 50%</span>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <button class="btn-ctrl btn-more" onclick="mfe.addLayer()">
+        <span class="icon">➕</span>
+        MORE
+        <span class="sub">+1 Vocal Stream</span>
+      </button>
+
+      <button class="btn-ctrl btn-less" onclick="mfe.removeLayer()">
+        <span class="icon">➖</span>
+        LESS
+        <span class="sub">-1 Vocal Stream</span>
+      </button>
+
+      <button class="btn-ctrl" onclick="mfe.replayMotif()">
+        <span class="icon">🔁</span>
+        AGAIN
+        <span class="sub">Queue Replay</span>
+      </button>
+
+      <button class="btn-ctrl" onclick="mfe.swapStems()">
+        <span class="icon">🔀</span>
+        DIFFERENT
+        <span class="sub">Shuffle Vocals</span>
+      </button>
+
+      <button class="btn-ctrl btn-snap" onclick="mfe.triggerSnap()">
+        <span class="icon">⚡</span>
+        SNAP
+        <span class="sub">1 Beat + 1 Voice</span>
+      </button>
+
+      <button class="btn-ctrl btn-stop" onclick="mfe.stopAll()">
+        <span class="icon">🛑</span>
+        STOP ALL
+        <span class="sub">Immediate Silence</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    class MFEAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.beatBuffers = [];
+        this.vocalBuffers = [];
+        this.activeRoles = new Set();
+        this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.lastPlayedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.queuedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.layerOrder = ['beat', 'anchor', 'lead', 'counter', 'echo'];
+        this.panConfig = {
+          beat: { pan: 0.0, el: 'lbl-beat' },
+          anchor: { pan: 0.0, el: 'lbl-anchor' },
+          lead: { pan: -0.25, el: 'lbl-lead' },
+          counter: { pan: 0.35, el: 'lbl-counter' },
+          echo: { pan: -0.50, el: 'lbl-echo' }
+        };
+
+        // GitHub Raw Audio Manifest (extracted from your repository screenshots)
+        this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
+        this.beatManifest = [
+          { name: 'Heavy Runnin (Beat 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
+          { name: 'Steady Coming (Beat 2)', path: 'beats/beats2.Steady Coming.mp3' },
+          { name: 'Have Heaven, Honey (Beat 3)', path: 'beats/beats3.Have Heaven, Honey.mp3' },
+          { name: 'Ray of Light (Beat 4)', path: 'beats/beats4.Ray of Light.mp3' },
+          { name: 'Sunshine Rider (Beat 5)', path: 'beats/beats5.sunshine rider.mp3' }
+        ];
+        this.vocalManifest = [
+          { name: 'Sunshine Rider (Vocal 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
+          { name: 'Ray of Light (Vocal 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
+          { name: 'Ray of Light (Vocal 3)', path: 'vocals/vocal3.Ray of Light.mp3' },
+          { name: 'Have Heaven, Honey (Vocal 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
+          { name: 'Steady Coming (Vocal 5)', path: 'vocals/vocal5.Steady Coming.mp3' },
+          { name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' },
+          { name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' }
+        ];
+      }
+
+      initContext() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      calculateRMS(buffer) {
+        const data = buffer.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 100) {
+          sum += data[i] * data[i];
+        }
+        return Math.sqrt(sum / (data.length / 100));
+      }
+
+      sliceAudioBuffer(fullBuffer, fileName, numSlices = 6) {
+        const slices = [];
+        const totalSamples = fullBuffer.length;
+        const sliceSamples = Math.floor(totalSamples / numSlices);
+        const channels = fullBuffer.numberOfChannels;
+        const sampleRate = fullBuffer.sampleRate;
+
+        for (let i = 0; i < numSlices; i++) {
+          const startSample = i * sliceSamples;
+          const sliceBuffer = this.ctx.createBuffer(channels, sliceSamples, sampleRate);
+
+          for (let ch = 0; ch < channels; ch++) {
+            const channelData = fullBuffer.getChannelData(ch);
+            const sliceData = sliceBuffer.getChannelData(ch);
+            sliceData.set(channelData.subarray(startSample, startSample + sliceSamples));
+          }
+
+          const rms = this.calculateRMS(sliceBuffer);
+          if (rms > 0.005) {
+            slices.push({
+              name: `${fileName} [Slice ${i + 1}]`,
+              buffer: sliceBuffer
+            });
+          }
+        }
+        return slices;
+      }
+
+      async fetchAndDecode(path) {
+        const fullUrl = encodeURI(this.baseUrl + path);
+        const res = await fetch(fullUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const arrayBuf = await res.arrayBuffer();
+        return await new Promise((resolve, reject) => {
+          this.ctx.decodeAudioData(arrayBuf, resolve, reject);
+        });
+      }
+
+      async startApp() {
+        this.initContext();
+        document.getElementById('start-btn').style.display = 'none';
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge loading';
+
+        let loadedCount = 0;
+        const totalFiles = this.beatManifest.length + this.vocalManifest.length;
+
+        // Fetch Beats
+        for (let item of this.beatManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading beats from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.beatBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed beat file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
+        // Fetch Vocals
+        for (let item of this.vocalManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading vocals from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.vocalBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed vocal file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
+        this.syncEngineState();
+      }
+
+      syncEngineState() {
+        this.initContext();
+
+        if (this.beatBuffers.length > 0 && !this.activeRoles.has('beat')) {
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+
+        if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `Active • ${this.beatBuffers.length} Beats | ${this.vocalBuffers.length} Vocal Stems Streamed`;
+      }
+
+      getRandomBuffer(role) {
+        const pool = (role === 'beat') ? this.beatBuffers : this.vocalBuffers;
+        if (pool.length === 0) return null;
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      stopRoleNode(role) {
+        if (this.activeNodes[role]) {
+          try {
+            this.activeNodes[role].source.onended = null;
+            this.activeNodes[role].source.stop();
+          } catch(e) {}
+          this.activeNodes[role] = null;
+        }
+      }
+
+      playRoleNext(role, explicitStem = null) {
+        if (!this.activeRoles.has(role)) return;
+
+        this.initContext();
+        this.stopRoleNode(role);
+
+        const stem = explicitStem || this.getRandomBuffer(role);
+        if (!stem) return;
+
+        const config = this.panConfig[role];
+        const source = this.ctx.createBufferSource();
+        source.buffer = stem.buffer;
+        source.loop = false;
+
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (panner) panner.pan.value = config.pan;
+
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.value = (role === 'beat') ? 0.75 : 0.85;
+
+        if (panner) {
+          source.connect(panner);
+          panner.connect(gainNode);
+        } else {
+          source.connect(gainNode);
+        }
+
+        gainNode.connect(this.ctx.destination);
+
+        source.onended = () => {
+          if (this.activeRoles.has(role)) {
+            if (this.queuedStem[role]) {
+              const queued = this.queuedStem[role];
+              this.queuedStem[role] = null;
+              this.playRoleNext(role, queued);
+            } else {
+              this.playRoleNext(role);
+            }
+          }
+        };
+
+        source.start(0);
+
+        this.activeNodes[role] = { source, gainNode, stem };
+        this.lastPlayedStem[role] = stem;
+        document.getElementById(config.el).innerText = stem.name;
+      }
+
+      addLayer() {
+        const vocalRoles = ['lead', 'counter', 'echo'];
+        for (let role of vocalRoles) {
+          if (!this.activeRoles.has(role)) {
+            this.activeRoles.add(role);
+            this.playRoleNext(role);
+            break;
+          }
+        }
+      }
+
+      removeLayer() {
+        const vocalRoles = ['echo', 'counter', 'lead'];
+        for (let role of vocalRoles) {
+          if (this.activeRoles.has(role)) {
+            this.activeRoles.delete(role);
+            this.stopRoleNode(role);
+            document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+            break;
+          }
+        }
+      }
+
+      replayMotif() {
+        let activeCount = 0;
+        this.layerOrder.forEach(role => {
+          if (this.activeRoles.has(role) && this.activeNodes[role]) {
+            activeCount++;
+            this.queuedStem[role] = this.lastPlayedStem[role];
+            const config = this.panConfig[role];
+            const currentName = this.lastPlayedStem[role] ? this.lastPlayedStem[role].name : 'Active';
+            document.getElementById(config.el).innerText = `⌛ ${currentName} (Replaying Next)`;
+          }
+        });
+
+        if (activeCount === 0) {
+          this.syncEngineState();
+        } else {
+          const statusEl = document.getElementById('status-badge');
+          statusEl.className = 'status-badge active';
+          statusEl.innerText = 'Replay Queued • Will repeat after current loop finishes';
+        }
+      }
+
+      swapStems() {
+        this.layerOrder.forEach(role => {
+          if (this.activeRoles.has(role)) {
+            this.queuedStem[role] = null;
+            this.playRoleNext(role);
+          }
+        });
+      }
+
+      triggerSnap() {
+        this.initContext();
+
+        ['lead', 'counter', 'echo'].forEach(role => {
+          this.activeRoles.delete(role);
+          this.queuedStem[role] = null;
+          this.stopRoleNode(role);
+          document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+        });
+
+        if (this.beatBuffers.length > 0) {
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+
+        if (this.vocalBuffers.length > 0) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+      }
+
+      stopAll() {
+        this.activeRoles.clear();
+        this.layerOrder.forEach(role => {
+          this.queuedStem[role] = null;
+          this.stopRoleNode(role);
+          document.getElementById(this.panConfig[role].el).innerText = 'Stopped';
+        });
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge';
+        statusEl.innerText = 'Stopped • Tap START or AGAIN to resume';
+      }
+    }
+
+    const mfe = new MFEAudioEngine();
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MFE Vocal Engine</title>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --card: #161922;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #c084fc;
+      --accent-pink: #f472b6;
+      --accent-red: #ef4444;
+      --text: #f3f4f6;
+      --subtext: #9ca3af;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      box-sizing: border-box;
+      border: 1px solid #272c3a;
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 1.4rem;
+      color: #fff;
+      text-align: center;
+    }
+    .subtitle {
+      color: var(--subtext);
+      font-size: 0.8rem;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .btn-start {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+      border: none;
+      padding: 16px;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+      margin-bottom: 16px;
+      transition: transform 0.1s ease;
+    }
+    .btn-start:active { transform: scale(0.97); }
+    .status-badge {
+      display: block;
+      text-align: center;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      background: #252a37;
+      color: #d1d5db;
+    }
+    .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .layer-display {
+      background: #0d0f14;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      border: 1px solid #1f2937;
+    }
+    .layer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a202c;
+      font-size: 0.85rem;
+    }
+    .layer-row:last-child { border-bottom: none; }
+    .layer-role { font-weight: 700; width: 140px; }
+    .layer-file {
+      color: var(--subtext);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 8px;
+    }
+    .layer-pan { font-size: 0.7rem; background: #252a37; padding: 2px 6px; border-radius: 4px; }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .btn-ctrl {
+      background: #1f2430;
+      color: var(--text);
+      border: 1px solid #374151;
+      padding: 14px 6px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .btn-ctrl:active { transform: scale(0.95); }
+    .btn-ctrl .icon { font-size: 1.4rem; }
+    .btn-ctrl .sub { font-size: 0.65rem; font-weight: 400; color: var(--subtext); }
+    .btn-more { border-color: rgba(59, 130, 246, 0.6); color: #60a5fa; background: rgba(59, 130, 246, 0.12); }
+    .btn-less { border-color: rgba(245, 158, 11, 0.6); color: #fcd34d; background: rgba(245, 158, 11, 0.12); }
+    .btn-snap { border-color: rgba(16, 185, 129, 0.6); color: #34d399; background: rgba(16, 185, 129, 0.12); }
+    .btn-stop { border-color: rgba(239, 68, 68, 0.6); color: #f87171; grid-column: span 3; margin-top: 4px; background: #2a1619; padding: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🎧 MFE Vocal Engine</h1>
+    <div class="subtitle">Mondegreen Familiarity Engine • Mobile Auto-Stream</div>
+
+    <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
+
+    <span class="status-badge" id="status-badge">Tap 'START ENGINE' to stream audio</span>
+
+    <div class="layer-display">
+      <div class="layer-row">
+        <span class="layer-role" style="color: #60a5fa;">BEAT (Motor Floor)</span>
+        <span class="layer-file" id="lbl-beat">Muted</span>
+        <span class="layer-pan">Center</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #34d399;">ANCHOR (R1 85%)</span>
+        <span class="layer-file" id="lbl-anchor">Muted</span>
+        <span class="layer-pan">Center</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #fcd34d;">LEAD (R2 70%)</span>
+        <span class="layer-file" id="lbl-lead">Muted</span>
+        <span class="layer-pan">Left 25%</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #c084fc;">COUNTER (R3 55%)</span>
+        <span class="layer-file" id="lbl-counter">Muted</span>
+        <span class="layer-pan">Right 35%</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #f472b6;">ECHO (R4 40%)</span>
+        <span class="layer-file" id="lbl-echo">Muted</span>
+        <span class="layer-pan">Left 50%</span>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <button class="btn-ctrl btn-more" onclick="mfe.addLayer()">
+        <span class="icon">➕</span>
+        MORE
+        <span class="sub">+1 Vocal Stream</span>
+      </button>
+
+      <button class="btn-ctrl btn-less" onclick="mfe.removeLayer()">
+        <span class="icon">➖</span>
+        LESS
+        <span class="sub">-1 Vocal Stream</span>
+      </button>
+
+      <button class="btn-ctrl" onclick="mfe.replayMotif()">
+        <span class="icon">🔁</span>
+        AGAIN
+        <span class="sub">Queue Replay</span>
+      </button>
+
+      <button class="btn-ctrl" onclick="mfe.swapStems()">
+        <span class="icon">🔀</span>
+        DIFFERENT
+        <span class="sub">Shuffle Vocals</span>
+      </button>
+
+      <button class="btn-ctrl btn-snap" onclick="mfe.triggerSnap()">
+        <span class="icon">⚡</span>
+        SNAP
+        <span class="sub">1 Beat + 1 Voice</span>
+      </button>
+
+      <button class="btn-ctrl btn-stop" onclick="mfe.stopAll()">
+        <span class="icon">🛑</span>
+        STOP ALL
+        <span class="sub">Immediate Silence</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    class MFEAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.beatBuffers = [];
+        this.vocalBuffers = [];
+        this.activeRoles = new Set();
+        this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.lastPlayedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.queuedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.layerOrder = ['beat', 'anchor', 'lead', 'counter', 'echo'];
+        this.panConfig = {
+          beat: { pan: 0.0, el: 'lbl-beat' },
+          anchor: { pan: 0.0, el: 'lbl-anchor' },
+          lead: { pan: -0.25, el: 'lbl-lead' },
+          counter: { pan: 0.35, el: 'lbl-counter' },
+          echo: { pan: -0.50, el: 'lbl-echo' }
+        };
+
+        // GitHub Raw Audio Manifest (extracted from your repository screenshots)
+        this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
+        this.beatManifest = [
+          { name: 'Heavy Runnin (Beat 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
+          { name: 'Steady Coming (Beat 2)', path: 'beats/beats2.Steady Coming.mp3' },
+          { name: 'Have Heaven, Honey (Beat 3)', path: 'beats/beats3.Have Heaven, Honey.mp3' },
+          { name: 'Ray of Light (Beat 4)', path: 'beats/beats4.Ray of Light.mp3' },
+          { name: 'Sunshine Rider (Beat 5)', path: 'beats/beats5.sunshine rider.mp3' }
+        ];
+        this.vocalManifest = [
+          { name: 'Sunshine Rider (Vocal 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
+          { name: 'Ray of Light (Vocal 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
+          { name: 'Ray of Light (Vocal 3)', path: 'vocals/vocal3.Ray of Light.mp3' },
+          { name: 'Have Heaven, Honey (Vocal 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
+          { name: 'Steady Coming (Vocal 5)', path: 'vocals/vocal5.Steady Coming.mp3' },
+          { name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' },
+          { name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' }
+        ];
+      }
+
+      initContext() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      calculateRMS(buffer) {
+        const data = buffer.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 100) {
+          sum += data[i] * data[i];
+        }
+        return Math.sqrt(sum / (data.length / 100));
+      }
+
+      sliceAudioBuffer(fullBuffer, fileName, numSlices = 6) {
+        const slices = [];
+        const totalSamples = fullBuffer.length;
+        const sliceSamples = Math.floor(totalSamples / numSlices);
+        const channels = fullBuffer.numberOfChannels;
+        const sampleRate = fullBuffer.sampleRate;
+
+        for (let i = 0; i < numSlices; i++) {
+          const startSample = i * sliceSamples;
+          const sliceBuffer = this.ctx.createBuffer(channels, sliceSamples, sampleRate);
+
+          for (let ch = 0; ch < channels; ch++) {
+            const channelData = fullBuffer.getChannelData(ch);
+            const sliceData = sliceBuffer.getChannelData(ch);
+            sliceData.set(channelData.subarray(startSample, startSample + sliceSamples));
+          }
+
+          const rms = this.calculateRMS(sliceBuffer);
+          if (rms > 0.005) {
+            slices.push({
+              name: `${fileName} [Slice ${i + 1}]`,
+              buffer: sliceBuffer
+            });
+          }
+        }
+        return slices;
+      }
+
+      async fetchAndDecode(path) {
+        const fullUrl = encodeURI(this.baseUrl + path);
+        const res = await fetch(fullUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const arrayBuf = await res.arrayBuffer();
+        return await new Promise((resolve, reject) => {
+          this.ctx.decodeAudioData(arrayBuf, resolve, reject);
+        });
+      }
+
+      async startApp() {
+        this.initContext();
+        document.getElementById('start-btn').style.display = 'none';
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge loading';
+
+        let loadedCount = 0;
+        const totalFiles = this.beatManifest.length + this.vocalManifest.length;
+
+        // Fetch Beats
+        for (let item of this.beatManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading beats from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.beatBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed beat file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
+        // Fetch Vocals
+        for (let item of this.vocalManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading vocals from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.vocalBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed vocal file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
+        this.syncEngineState();
+      }
+
+      syncEngineState() {
+        this.initContext();
+
+        if (this.beatBuffers.length > 0 && !this.activeRoles.has('beat')) {
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+
+        if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `Active • ${this.beatBuffers.length} Beats | ${this.vocalBuffers.length} Vocal Stems Streamed`;
+      }
+
+      getRandomBuffer(role) {
+        const pool = (role === 'beat') ? this.beatBuffers : this.vocalBuffers;
+        if (pool.length === 0) return null;
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      stopRoleNode(role) {
+        if (this.activeNodes[role]) {
+          try {
+            this.activeNodes[role].source.onended = null;
+            this.activeNodes[role].source.stop();
+          } catch(e) {}
+          this.activeNodes[role] = null;
+        }
+      }
+
+      playRoleNext(role, explicitStem = null) {
+        if (!this.activeRoles.has(role)) return;
+
+        this.initContext();
+        this.stopRoleNode(role);
+
+        const stem = explicitStem || this.getRandomBuffer(role);
+        if (!stem) return;
+
+        const config = this.panConfig[role];
+        const source = this.ctx.createBufferSource();
+        source.buffer = stem.buffer;
+        source.loop = false;
+
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (panner) panner.pan.value = config.pan;
+
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.value = (role === 'beat') ? 0.75 : 0.85;
+
+        if (panner) {
+          source.connect(panner);
+          panner.connect(gainNode);
+        } else {
+          source.connect(gainNode);
+        }
+
+        gainNode.connect(this.ctx.destination);
+
+        source.onended = () => {
+          if (this.activeRoles.has(role)) {
+            if (this.queuedStem[role]) {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MFE Vocal Engine</title>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --card: #161922;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #c084fc;
+      --accent-pink: #f472b6;
+      --accent-red: #ef4444;
+      --text: #f3f4f6;
+      --subtext: #9ca3af;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      box-sizing: border-box;
+      border: 1px solid #272c3a;
+    }
+    h1 {
+      margin: 0 0 4px 0;
+      font-size: 1.4rem;
+      color: #fff;
+      text-align: center;
+    }
+    .subtitle {
+      color: var(--subtext);
+      font-size: 0.8rem;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .btn-start {
+      width: 100%;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+      border: none;
+      padding: 16px;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+      margin-bottom: 16px;
+      transition: transform 0.1s ease;
+    }
+    .btn-start:active { transform: scale(0.97); }
+    .status-badge {
+      display: block;
+      text-align: center;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      background: #252a37;
+      color: #d1d5db;
+    }
+    .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .layer-display {
+      background: #0d0f14;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      border: 1px solid #1f2937;
+    }
+    .layer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a202c;
+      font-size: 0.85rem;
+    }
+    .layer-row:last-child { border-bottom: none; }
+    .layer-role { font-weight: 700; width: 140px; }
+    .layer-file {
+      color: var(--subtext);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 8px;
+    }
+    .layer-pan { font-size: 0.7rem; background: #252a37; padding: 2px 6px; border-radius: 4px; }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .btn-ctrl {
+      background: #1f2430;
+      color: var(--text);
+      border: 1px solid #374151;
+      padding: 14px 6px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .btn-ctrl:active { transform: scale(0.95); }
+    .btn-ctrl .icon { font-size: 1.4rem; }
+    .btn-ctrl .sub { font-size: 0.65rem; font-weight: 400; color: var(--subtext); }
+    .btn-more { border-color: rgba(59, 130, 246, 0.6); color: #60a5fa; background: rgba(59, 130, 246, 0.12); }
+    .btn-less { border-color: rgba(245, 158, 11, 0.6); color: #fcd34d; background: rgba(245, 158, 11, 0.12); }
+    .btn-snap { border-color: rgba(16, 185, 129, 0.6); color: #34d399; background: rgba(16, 185, 129, 0.12); }
+    .btn-stop { border-color: rgba(239, 68, 68, 0.6); color: #f87171; grid-column: span 3; margin-top: 4px; background: #2a1619; padding: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🎧 MFE Vocal Engine</h1>
+    <div class="subtitle">Mondegreen Familiarity Engine • Mobile Auto-Stream</div>
+
+    <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
+
+    <span class="status-badge" id="status-badge">Tap 'START ENGINE' to stream audio</span>
+
+    <div class="layer-display">
+      <div class="layer-row">
+        <span class="layer-role" style="color: #60a5fa;">BEAT (Motor Floor)</span>
+        <span class="layer-file" id="lbl-beat">Muted</span>
+        <span class="layer-pan">Center</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #34d399;">ANCHOR (R1 85%)</span>
+        <span class="layer-file" id="lbl-anchor">Muted</span>
+        <span class="layer-pan">Center</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #fcd34d;">LEAD (R2 70%)</span>
+        <span class="layer-file" id="lbl-lead">Muted</span>
+        <span class="layer-pan">Left 25%</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #c084fc;">COUNTER (R3 55%)</span>
+        <span class="layer-file" id="lbl-counter">Muted</span>
+        <span class="layer-pan">Right 35%</span>
+      </div>
+      <div class="layer-row">
+        <span class="layer-role" style="color: #f472b6;">ECHO (R4 40%)</span>
+        <span class="layer-file" id="lbl-echo">Muted</span>
+        <span class="layer-pan">Left 50%</span>
+      </div>
+    </div>
+
+    <div class="controls-grid">
+      <button class="btn-ctrl btn-more" onclick="mfe.addLayer()">
+        <span class="icon">➕</span>
+        MORE
+        <span class="sub">+1 Vocal Stream</span>
+      </button>
+
+      <button class="btn-ctrl btn-less" onclick="mfe.removeLayer()">
+        <span class="icon">➖</span>
+        LESS
+        <span class="sub">-1 Vocal Stream</span>
+      </button>
+
+      <button class="btn-ctrl" onclick="mfe.replayMotif()">
+        <span class="icon">🔁</span>
+        AGAIN
+        <span class="sub">Queue Replay</span>
+      </button>
+
+      <button class="btn-ctrl" onclick="mfe.swapStems()">
+        <span class="icon">🔀</span>
+        DIFFERENT
+        <span class="sub">Shuffle Vocals</span>
+      </button>
+
+      <button class="btn-ctrl btn-snap" onclick="mfe.triggerSnap()">
+        <span class="icon">⚡</span>
+        SNAP
+        <span class="sub">1 Beat + 1 Voice</span>
+      </button>
+
+      <button class="btn-ctrl btn-stop" onclick="mfe.stopAll()">
+        <span class="icon">🛑</span>
+        STOP ALL
+        <span class="sub">Immediate Silence</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    class MFEAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.beatBuffers = [];
+        this.vocalBuffers = [];
+        this.activeRoles = new Set();
+        this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.lastPlayedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.queuedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.layerOrder = ['beat', 'anchor', 'lead', 'counter', 'echo'];
+        this.panConfig = {
+          beat: { pan: 0.0, el: 'lbl-beat' },
+          anchor: { pan: 0.0, el: 'lbl-anchor' },
+          lead: { pan: -0.25, el: 'lbl-lead' },
+          counter: { pan: 0.35, el: 'lbl-counter' },
+          echo: { pan: -0.50, el: 'lbl-echo' }
+        };
+
+        // GitHub Raw Audio Manifest (extracted from your repository screenshots)
+        this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
+        this.beatManifest = [
+          { name: 'Heavy Runnin (Beat 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
+          { name: 'Steady Coming (Beat 2)', path: 'beats/beats2.Steady Coming.mp3' },
+          { name: 'Have Heaven, Honey (Beat 3)', path: 'beats/beats3.Have Heaven, Honey.mp3' },
+          { name: 'Ray of Light (Beat 4)', path: 'beats/beats4.Ray of Light.mp3' },
+          { name: 'Sunshine Rider (Beat 5)', path: 'beats/beats5.sunshine rider.mp3' }
+        ];
+        this.vocalManifest = [
+          { name: 'Sunshine Rider (Vocal 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
+          { name: 'Ray of Light (Vocal 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
+          { name: 'Ray of Light (Vocal 3)', path: 'vocals/vocal3.Ray of Light.mp3' },
+          { name: 'Have Heaven, Honey (Vocal 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
+          { name: 'Steady Coming (Vocal 5)', path: 'vocals/vocal5.Steady Coming.mp3' },
+          { name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' },
+          { name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' }
+        ];
+      }
+
+      initContext() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      calculateRMS(buffer) {
+        const data = buffer.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 100) {
+          sum += data[i] * data[i];
+        }
+        return Math.sqrt(sum / (data.length / 100));
+      }
+
+      sliceAudioBuffer(fullBuffer, fileName, numSlices = 6) {
+        const slices = [];
+        const totalSamples = fullBuffer.length;
+        const sliceSamples = Math.floor(totalSamples / numSlices);
+        const channels = fullBuffer.numberOfChannels;
+        const sampleRate = fullBuffer.sampleRate;
+
+        for (let i = 0; i < numSlices; i++) {
+          const startSample = i * sliceSamples;
+          const sliceBuffer = this.ctx.createBuffer(channels, sliceSamples, sampleRate);
+
+          for (let ch = 0; ch < channels; ch++) {
+            const channelData = fullBuffer.getChannelData(ch);
+            const sliceData = sliceBuffer.getChannelData(ch);
+            sliceData.set(channelData.subarray(startSample, startSample + sliceSamples));
+          }
+
+          const rms = this.calculateRMS(sliceBuffer);
+          if (rms > 0.005) {
+            slices.push({
+              name: `${fileName} [Slice ${i + 1}]`,
+              buffer: sliceBuffer
+            });
+          }
+        }
+        return slices;
+      }
+
+      async fetchAndDecode(path) {
+        const fullUrl = encodeURI(this.baseUrl + path);
+        const res = await fetch(fullUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const arrayBuf = await res.arrayBuffer();
+        return await new Promise((resolve, reject) => {
+          this.ctx.decodeAudioData(arrayBuf, resolve, reject);
+        });
+      }
+
+      async startApp() {
+        this.initContext();
+        document.getElementById('start-btn').style.display = 'none';
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge loading';
+
+        let loadedCount = 0;
+        const totalFiles = this.beatManifest.length + this.vocalManifest.length;
+
+        // Fetch Beats
+        for (let item of this.beatManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading beats from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.beatBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed beat file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
+        // Fetch Vocals
+        for (let item of this.vocalManifest) {
+          try {
+            statusEl.innerText = `⏳ Loading vocals from GitHub... (${loadedCount}/${totalFiles})`;
+            const decoded = await this.fetchAndDecode(item.path);
+            this.vocalBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
+          } catch(e) {
+            console.warn(`Failed vocal file: ${item.name}`, e);
+          }
+          loadedCount++;
+        }
+
+        this.syncEngineState();
+      }
+
+      syncEngineState() {
+        this.initContext();
+
+        if (this.beatBuffers.length > 0 && !this.activeRoles.has('beat')) {
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+
+        if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `Active • ${this.beatBuffers.length} Beats | ${this.vocalBuffers.length} Vocal Stems Streamed`;
+      }
+
+      getRandomBuffer(role) {
+        const pool = (role === 'beat') ? this.beatBuffers : this.vocalBuffers;
+        if (pool.length === 0) return null;
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      stopRoleNode(role) {
+        if (this.activeNodes[role]) {
+          try {
+            this.activeNodes[role].source.onended = null;
+            this.activeNodes[role].source.stop();
+          } catch(e) {}
+          this.activeNodes[role] = null;
+        }
+      }
+
+      playRoleNext(role, explicitStem = null) {
+        if (!this.activeRoles.has(role)) return;
+
+        this.initContext();
+        this.stopRoleNode(role);
+
+        const stem = explicitStem || this.getRandomBuffer(role);
+        if (!stem) return;
+
+        const config = this.panConfig[role];
+        const source = this.ctx.createBufferSource();
+        source.buffer = stem.buffer;
+        source.loop = false;
+
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (panner) panner.pan.value = config.pan;
+
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.value = (role === 'beat') ? 0.75 : 0.85;
+
+        if (panner) {
+          source.connect(panner);
+          panner.connect(gainNode);
+        } else {
+          source.connect(gainNode);
+        }
+
+        gainNode.connect(this.ctx.destination);
+
+        source.onended = () => {
+          if (this.activeRoles.has(role)) {
+            if (this.queuedStem[role]) {
+              const queued = this.queuedStem[role];
+              this.queuedStem[role] = null;
+              this.playRoleNext(role, queued);
+            } else {
+              this.playRoleNext(role);
+            }
+          }
+        };
+
+        source.start(0);
+
+        this.activeNodes[role] = { source, gainNode, stem };
+        this.lastPlayedStem[role] = stem;
+        document.getElementById(config.el).innerText = stem.name;
+      }
+
+      addLayer() {
+        const vocalRoles = ['lead', 'counter', 'echo'];
+        for (let role of vocalRoles) {
+          if (!this.activeRoles.has(role)) {
+            this.activeRoles.add(role);
+            this.playRoleNext(role);
+            break;
+          }
+        }
+      }
+
+      removeLayer() {
+        const vocalRoles = ['echo', 'counter', 'lead'];
+        for (let role of vocalRoles) {
+          if (this.activeRoles.has(role)) {
+            this.activeRoles.delete(role);
+            this.stopRoleNode(role);
+            document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+            break;
+          }
+        }
+      }
+
       replayMotif() {
         let activeCount = 0;
         this.layerOrder.forEach(role => {
