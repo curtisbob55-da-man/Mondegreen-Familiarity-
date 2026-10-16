@@ -57,7 +57,7 @@
       color: var(--subtext);
       font-size: 0.8rem;
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .btn-start {
       width: 100%;
@@ -81,17 +81,115 @@
       border-radius: 20px;
       font-size: 0.82rem;
       font-weight: 600;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       background: #252a37;
       color: #d1d5db;
     }
     .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
     .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+
+    /* Physicality Meter UI */
+    .physicality-card {
+      background: #090b0e;
+      border: 1px solid #1f2937;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .physicality-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .physicality-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #f3f4f6;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .peak-score-tag {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.15);
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .meter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .meter-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--subtext);
+    }
+    .meter-bar-bg {
+      height: 8px;
+      background: #1f2430;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .meter-bar-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.08s ease-out;
+      border-radius: 4px;
+    }
+    .fill-bass { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .fill-vocal { background: linear-gradient(90deg, #c084fc, #f472b6); }
+    .fill-total { background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); }
+
+    /* Highlight Reel Replays */
+    .highlights-container {
+      background: #11141d;
+      border: 1px dashed #374151;
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+    .highlights-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--subtext);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .replay-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .replay-btn {
+      background: #1a202c;
+      border: 1px solid #2d3748;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .replay-btn:active { transform: scale(0.97); background: #2d3748; }
+    .replay-btn .badge { background: #3b82f6; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
+
     .layer-display {
       background: #0d0f14;
       border-radius: 14px;
       padding: 12px 14px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       border: 1px solid #1f2937;
     }
     .layer-row {
@@ -113,6 +211,7 @@
       padding: 0 8px;
     }
     .layer-pan { font-size: 0.7rem; background: #252a37; padding: 2px 6px; border-radius: 4px; }
+    
     .controls-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -147,12 +246,62 @@
 
   <div class="container">
     <h1>🎧 MFE Vocal Engine</h1>
-    <div class="subtitle">Mondegreen Familiarity Engine • Instant-Start Streamer</div>
+    <div class="subtitle">Mondegreen Familiarity Engine • Physicality Meter & Highlights</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
 
     <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
 
+    <!-- Real-Time Room Physicality Gauge -->
+    <div class="physicality-card">
+      <div class="physicality-header">
+        <span class="physicality-title">🔊 ROOM PHYSICALITY GAUGE</span>
+        <span class="peak-score-tag" id="peak-score-display">RECORD: 0%</span>
+      </div>
+      <div class="meter-group">
+        <div>
+          <div class="meter-label">
+            <span>Rhythm Floor (Bass Thud)</span>
+            <span id="txt-bass">0%</span>
+          </div>
+          <div class="meter-bar-bg">
+            <div class="meter-bar-fill fill-bass" id="bar-bass"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="meter-label">
+            <span>Vocal Density (Mid-High Weight)</span>
+            <span id="txt-vocal">0%</span>
+          </div>
+          <div class="meter-bar-bg">
+            <div class="meter-bar-fill fill-vocal" id="bar-vocal"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="meter-label" style="font-weight: 700; color: #fff;">
+            <span>TOTAL PHYSICAL IMPACT</span>
+            <span id="txt-total">0%</span>
+          </div>
+          <div class="meter-bar-bg" style="height: 10px;">
+            <div class="meter-bar-fill fill-total" id="bar-total"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Highlight Reel / Replays -->
+    <div class="highlights-container">
+      <div class="highlights-title">🎬 Top Physical Replays (High Scores)</div>
+      <div class="replay-list" id="replay-list">
+        <div style="font-size: 0.75rem; color: var(--subtext); text-align: center; padding: 6px;">
+          No peak moments captured yet. Push MORE or DIFFERENT to generate physical peaks!
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Stem Display -->
     <div class="layer-display">
       <div class="layer-row">
         <span class="layer-role" style="color: #60a5fa;">BEAT (Motor Floor)</span>
@@ -181,6 +330,7 @@
       </div>
     </div>
 
+    <!-- Controls Grid -->
     <div class="controls-grid">
       <button class="btn-ctrl btn-more" onclick="mfe.addLayer()">
         <span class="icon">➕</span>
@@ -230,6 +380,8 @@
     class MFEAudioEngine {
       constructor() {
         this.ctx = null;
+        this.masterGain = null;
+        this.analyser = null;
         this.beatBuffers = [];
         this.vocalBuffers = [];
         this.activeRoles = new Set();
@@ -244,6 +396,9 @@
           counter: { pan: 0.35, el: 'lbl-counter' },
           echo: { pan: -0.50, el: 'lbl-echo' }
         };
+
+        this.sessionPeakScore = 0;
+        this.savedHighlights = [];
 
         this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
         this.beatManifest = [
@@ -268,10 +423,117 @@
         if (!this.ctx) {
           const AudioCtx = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioCtx();
+
+          this.masterGain = this.ctx.createGain();
+          this.analyser = this.ctx.createAnalyser();
+          this.analyser.fftSize = 512;
+
+          this.masterGain.connect(this.analyser);
+          this.analyser.connect(this.ctx.destination);
+
+          this.startPhysicalityLoop();
         }
         if (this.ctx.state === 'suspended') {
           this.ctx.resume();
         }
+      }
+
+      startPhysicalityLoop() {
+        const freqData = new Uint8Array(this.analyser.frequencyBinCount);
+        
+        const updateMeters = () => {
+          if (this.activeRoles.size > 0) {
+            this.analyser.getByteFrequencyData(freqData);
+
+            // Sub-bass / Bass frequencies (Bins 0 to 12 -> ~0-250Hz)
+            let bassSum = 0;
+            for (let i = 0; i < 12; i++) bassSum += freqData[i];
+            let bassScore = Math.min(100, Math.round((bassSum / (12 * 255)) * 140));
+
+            // Vocal Mid-High frequencies (Bins 13 to 120 -> ~250Hz-4kHz)
+            let vocalSum = 0;
+            for (let i = 13; i < 120; i++) vocalSum += freqData[i];
+            let vocalScore = Math.min(100, Math.round((vocalSum / (107 * 255)) * 180));
+
+            // Layer Load Multiplier
+            let layerDensityMultiplier = (this.activeRoles.size / 5);
+            let totalImpact = Math.min(100, Math.round((bassScore * 0.45 + vocalScore * 0.35 + layerDensityMultiplier * 20)));
+
+            document.getElementById('bar-bass').style.width = bassScore + '%';
+            document.getElementById('txt-bass').innerText = bassScore + '%';
+
+            document.getElementById('bar-vocal').style.width = vocalScore + '%';
+            document.getElementById('txt-vocal').innerText = vocalScore + '%';
+
+            document.getElementById('bar-total').style.width = totalImpact + '%';
+            document.getElementById('txt-total').innerText = totalImpact + '%';
+
+            // Check for new High Score Record
+            if (totalImpact > this.sessionPeakScore && totalImpact > 35) {
+              this.sessionPeakScore = totalImpact;
+              document.getElementById('peak-score-display').innerText = `RECORD: ${this.sessionPeakScore}%`;
+              this.recordHighlight(totalImpact);
+            }
+          } else {
+            document.getElementById('bar-bass').style.width = '0%';
+            document.getElementById('txt-bass').innerText = '0%';
+            document.getElementById('bar-vocal').style.width = '0%';
+            document.getElementById('txt-vocal').innerText = '0%';
+            document.getElementById('bar-total').style.width = '0%';
+            document.getElementById('txt-total').innerText = '0%';
+          }
+          requestAnimationFrame(updateMeters);
+        };
+        requestAnimationFrame(updateMeters);
+      }
+
+      recordHighlight(score) {
+        // Snapshot active setup
+        const snapshot = {
+          id: Date.now(),
+          score: score,
+          roles: Array.from(this.activeRoles),
+          stems: { ...this.lastPlayedStem },
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        };
+
+        // Add to highlights and keep top 3
+        this.savedHighlights.unshift(snapshot);
+        this.savedHighlights.sort((a, b) => b.score - a.score);
+        this.savedHighlights = this.savedHighlights.slice(0, 3);
+
+        this.renderHighlightsUI();
+      }
+
+      renderHighlightsUI() {
+        const listEl = document.getElementById('replay-list');
+        listEl.innerHTML = '';
+
+        this.savedHighlights.forEach((hl, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'replay-btn';
+          btn.onclick = () => this.replayHighlight(hl);
+          btn.innerHTML = `
+            <span>💥 Replay #${idx + 1} (${hl.roles.length} Layers @ ${hl.time})</span>
+            <span class="badge">${hl.score}% IMPACT</span>
+          `;
+          listEl.appendChild(btn);
+        });
+      }
+
+      replayHighlight(hl) {
+        this.initContext();
+        this.stopAll();
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `💥 Replaying Peak Record (${hl.score}% Impact)`;
+
+        hl.roles.forEach(role => {
+          this.activeRoles.add(role);
+          const stemToPlay = hl.stems[role];
+          this.playRoleNext(role, stemToPlay);
+        });
       }
 
       calculateRMS(buffer) {
@@ -337,7 +599,6 @@
         });
       }
 
-      // Fast-Start: Loads 1 Beat + 1 Vocal first, starts playback instantly, then buffers the rest in background
       async startApp() {
         this.initContext();
         document.getElementById('start-btn').style.display = 'none';
@@ -346,7 +607,6 @@
         statusEl.className = 'status-badge loading';
         statusEl.innerText = '⚡ Starting instant baseline...';
 
-        // 1. Fast Load First Beat & First Vocal
         try {
           const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
           this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 6));
@@ -354,20 +614,17 @@
           const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
           this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 6));
 
-          // Start playing baseline immediately!
           this.syncEngineState();
         } catch(e) {
           console.warn("Fast start fallback", e);
         }
 
-        // 2. Load the remaining stems in the background while audio is bop-ing!
         this.loadRemainingBackground();
       }
 
       async loadRemainingBackground() {
         const statusEl = document.getElementById('status-badge');
         
-        // Background Beat Loading
         for (let i = 1; i < this.beatManifest.length; i++) {
           try {
             const item = this.beatManifest[i];
@@ -376,7 +633,6 @@
           } catch(e) {}
         }
 
-        // Background Vocal Loading
         for (let i = 1; i < this.vocalManifest.length; i++) {
           try {
             const item = this.vocalManifest[i];
@@ -450,7 +706,7 @@
           source.connect(gainNode);
         }
 
-        gainNode.connect(this.ctx.destination);
+        gainNode.connect(this.masterGain);
 
         source.onended = () => {
           if (this.activeRoles.has(role)) {
