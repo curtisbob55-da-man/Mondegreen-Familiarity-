@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>MFE Vocal Engine</title>
   
-  <!-- PWA & Mobile Home Screen Meta Tags -->
   <meta name="theme-color" content="#0d0f14">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -148,11 +147,11 @@
 
   <div class="container">
     <h1>🎧 MFE Vocal Engine</h1>
-    <div class="subtitle">Mondegreen Familiarity Engine • Instant PWA Caching</div>
+    <div class="subtitle">Mondegreen Familiarity Engine • Instant-Start Streamer</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
 
-    <span class="status-badge" id="status-badge">Tap 'START ENGINE' to stream audio</span>
+    <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
 
     <div class="layer-display">
       <div class="layer-row">
@@ -255,13 +254,13 @@
           { name: 'Sunshine Rider (Beat 5)', path: 'beats/beats5.sunshine rider.mp3' }
         ];
         this.vocalManifest = [
+          { name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' },
           { name: 'Sunshine Rider (Vocal 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
           { name: 'Ray of Light (Vocal 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
           { name: 'Ray of Light (Vocal 3)', path: 'vocals/vocal3.Ray of Light.mp3' },
           { name: 'Have Heaven, Honey (Vocal 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
           { name: 'Steady Coming (Vocal 5)', path: 'vocals/vocal5.Steady Coming.mp3' },
-          { name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' },
-          { name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' }
+          { name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' }
         ];
       }
 
@@ -312,7 +311,6 @@
         return slices;
       }
 
-      // PWA Persistent Audio Caching Engine
       async fetchAndDecode(path) {
         const fullUrl = encodeURI(this.baseUrl + path);
         const cacheName = 'mfe-audio-v1';
@@ -339,39 +337,56 @@
         });
       }
 
+      // Fast-Start: Loads 1 Beat + 1 Vocal first, starts playback instantly, then buffers the rest in background
       async startApp() {
         this.initContext();
         document.getElementById('start-btn').style.display = 'none';
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge loading';
+        statusEl.innerText = '⚡ Starting instant baseline...';
 
-        let loadedCount = 0;
-        const totalFiles = this.beatManifest.length + this.vocalManifest.length;
+        // 1. Fast Load First Beat & First Vocal
+        try {
+          const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
+          this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 6));
 
-        for (let item of this.beatManifest) {
+          const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
+          this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 6));
+
+          // Start playing baseline immediately!
+          this.syncEngineState();
+        } catch(e) {
+          console.warn("Fast start fallback", e);
+        }
+
+        // 2. Load the remaining stems in the background while audio is bop-ing!
+        this.loadRemainingBackground();
+      }
+
+      async loadRemainingBackground() {
+        const statusEl = document.getElementById('status-badge');
+        
+        // Background Beat Loading
+        for (let i = 1; i < this.beatManifest.length; i++) {
           try {
-            statusEl.innerText = `⚡ Preparing audio storage... (${loadedCount}/${totalFiles})`;
+            const item = this.beatManifest[i];
             const decoded = await this.fetchAndDecode(item.path);
             this.beatBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
-          } catch(e) {
-            console.warn(`Failed beat file: ${item.name}`, e);
-          }
-          loadedCount++;
+          } catch(e) {}
         }
 
-        for (let item of this.vocalManifest) {
+        // Background Vocal Loading
+        for (let i = 1; i < this.vocalManifest.length; i++) {
           try {
-            statusEl.innerText = `⚡ Preparing audio storage... (${loadedCount}/${totalFiles})`;
+            const item = this.vocalManifest[i];
             const decoded = await this.fetchAndDecode(item.path);
             this.vocalBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
-          } catch(e) {
-            console.warn(`Failed vocal file: ${item.name}`, e);
-          }
-          loadedCount++;
+          } catch(e) {}
         }
 
-        this.syncEngineState();
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `Active • All ${this.beatBuffers.length} Beats & ${this.vocalBuffers.length} Vocals Ready`;
       }
 
       syncEngineState() {
@@ -389,7 +404,7 @@
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = `Active • Cached & Ready (${this.beatBuffers.length} Beats | ${this.vocalBuffers.length} Vocals)`;
+        statusEl.innerText = 'Playing • Buffering background stems...';
       }
 
       getRandomBuffer(role) {
