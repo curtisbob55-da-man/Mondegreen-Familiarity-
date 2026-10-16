@@ -140,7 +140,7 @@
     .meter-bar-fill {
       height: 100%;
       width: 0%;
-      transition: width 0.08s ease-out;
+      transition: width 0.05s ease-out;
       border-radius: 4px;
     }
     .fill-bass { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
@@ -246,7 +246,7 @@
 
   <div class="container">
     <h1>🎧 MFE Vocal Engine</h1>
-    <div class="subtitle">Mondegreen Familiarity Engine • Physicality Meter & Highlights</div>
+    <div class="subtitle">Mondegreen Familiarity Engine • Non-Linear Physicality DSP</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
 
@@ -426,7 +426,7 @@
 
           this.masterGain = this.ctx.createGain();
           this.analyser = this.ctx.createAnalyser();
-          this.analyser.fftSize = 512;
+          this.analyser.fftSize = 1024; // Finer frequency resolution
 
           this.masterGain.connect(this.analyser);
           this.analyser.connect(this.ctx.destination);
@@ -438,6 +438,7 @@
         }
       }
 
+      // Exponential Exponential Power-Curve DSP Loop
       startPhysicalityLoop() {
         const freqData = new Uint8Array(this.analyser.frequencyBinCount);
         
@@ -445,19 +446,35 @@
           if (this.activeRoles.size > 0) {
             this.analyser.getByteFrequencyData(freqData);
 
-            // Sub-bass / Bass frequencies (Bins 0 to 12 -> ~0-250Hz)
+            // 1. Sub-bass / Low-Frequency Pressure (Bins 0 to 12 -> 0-250Hz)
             let bassSum = 0;
             for (let i = 0; i < 12; i++) bassSum += freqData[i];
-            let bassScore = Math.min(100, Math.round((bassSum / (12 * 255)) * 140));
+            let rawBassNorm = bassSum / (12 * 255); // 0.0 to 1.0
+            
+            // Apply Power Curve (Power^2.2) to steepen the high end
+            let bassScore = Math.min(100, Math.round(Math.pow(rawBassNorm, 2.2) * 115));
 
-            // Vocal Mid-High frequencies (Bins 13 to 120 -> ~250Hz-4kHz)
+            // 2. Vocal Formant Density (Bins 13 to 180 -> 250Hz-4kHz)
             let vocalSum = 0;
-            for (let i = 13; i < 120; i++) vocalSum += freqData[i];
-            let vocalScore = Math.min(100, Math.round((vocalSum / (107 * 255)) * 180));
+            for (let i = 13; i < 180; i++) vocalSum += freqData[i];
+            let rawVocalNorm = vocalSum / (167 * 255); // 0.0 to 1.0
+            let vocalScore = Math.min(100, Math.round(Math.pow(rawVocalNorm, 2.0) * 110));
 
-            // Layer Load Multiplier
-            let layerDensityMultiplier = (this.activeRoles.size / 5);
-            let totalImpact = Math.min(100, Math.round((bassScore * 0.45 + vocalScore * 0.35 + layerDensityMultiplier * 20)));
+            // 3. Layer Density Multiplier (Requires full stack for maximum potential)
+            let activeRatio = (this.activeRoles.size / 5); // 0.2 to 1.0
+            
+            // Raw composite energy
+            let rawTotal = (bassScore * 0.45) + (vocalScore * 0.35) + (activeRatio * 20);
+
+            // Steep exponential ceiling above 80% (making 100% an elusive peak)
+            let totalImpact = 0;
+            if (rawTotal <= 80) {
+              totalImpact = Math.round(rawTotal);
+            } else {
+              // Compress 80-110 raw energy range tightly into 80-100%
+              let overflow = (rawTotal - 80) / 30; // 0.0 to 1.0
+              totalImpact = Math.min(100, Math.round(80 + (Math.pow(overflow, 1.8) * 20)));
+            }
 
             document.getElementById('bar-bass').style.width = bassScore + '%';
             document.getElementById('txt-bass').innerText = bassScore + '%';
@@ -468,8 +485,8 @@
             document.getElementById('bar-total').style.width = totalImpact + '%';
             document.getElementById('txt-total').innerText = totalImpact + '%';
 
-            // Check for new High Score Record
-            if (totalImpact > this.sessionPeakScore && totalImpact > 35) {
+            // Auto-Record High Score Record
+            if (totalImpact > this.sessionPeakScore && totalImpact > 40) {
               this.sessionPeakScore = totalImpact;
               document.getElementById('peak-score-display').innerText = `RECORD: ${this.sessionPeakScore}%`;
               this.recordHighlight(totalImpact);
@@ -488,7 +505,6 @@
       }
 
       recordHighlight(score) {
-        // Snapshot active setup
         const snapshot = {
           id: Date.now(),
           score: score,
@@ -497,7 +513,6 @@
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
         };
 
-        // Add to highlights and keep top 3
         this.savedHighlights.unshift(snapshot);
         this.savedHighlights.sort((a, b) => b.score - a.score);
         this.savedHighlights = this.savedHighlights.slice(0, 3);
