@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>MFE Vocal Engine • Non-Linear Physicality DSP</title>
+  <title>MFE Vocal Engine • Americana Nostalgia DSP</title>
   
   <meta name="theme-color" content="#0d0f14">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MFE Engine">
-  <link rel="manifest" href='data:application/json,{"name":"MFE Vocal Engine","short_name":"MFE Engine","start_url":".","display":"standalone","background_color":"#0d0f14","theme_color":"#0d0f14"}'>
 
   <style>
     :root {
@@ -143,7 +142,7 @@
     .fill-vocal { background: linear-gradient(90deg, #c084fc, #f472b6); }
     .fill-total { background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); }
 
-    /* 60-Second Real-Time Impact Timeline Canvas */
+    /* 60s History Canvas */
     .timeline-container {
       margin-top: 12px;
       padding-top: 8px;
@@ -167,7 +166,7 @@
       display: block;
     }
 
-    /* Unique Mix Hall of Fame */
+    /* Saved Memory Presets */
     .highlights-container {
       background: #11141d;
       border: 1px solid #272c3a;
@@ -226,12 +225,12 @@
     }
     .btn-replay-action {
       flex: 1;
-      padding: 6px;
-      border-radius: 6px;
+      padding: 8px;
+      border-radius: 8px;
       border: 1px solid #374151;
       background: #252a37;
       color: #f3f4f6;
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
@@ -240,7 +239,7 @@
       gap: 4px;
     }
     .btn-replay-action:active { transform: scale(0.97); }
-    .btn-grow { border-color: rgba(16, 185, 129, 0.5); color: #34d399; background: rgba(16, 185, 129, 0.15); }
+    .btn-lock { border-color: rgba(245, 158, 11, 0.5); color: #fcd34d; background: rgba(245, 158, 11, 0.15); }
 
     /* Stem Display */
     .layer-display {
@@ -299,65 +298,19 @@
     .btn-snap { border-color: rgba(16, 185, 129, 0.6); color: #34d399; background: rgba(16, 185, 129, 0.12); }
     .btn-restart { border-color: rgba(192, 132, 252, 0.6); color: #c084fc; background: rgba(192, 132, 252, 0.12); }
     .btn-stop { border-color: rgba(239, 68, 68, 0.6); color: #f87171; grid-column: span 3; margin-top: 4px; background: #2a1619; padding: 16px; }
-
-    /* Modal Dialog for SeedBloom Export Bridge */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 16px;
-    }
-    .modal-card {
-      background: #161922;
-      border: 1px solid #10b981;
-      border-radius: 16px;
-      padding: 20px;
-      max-width: 440px;
-      width: 100%;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.8);
-    }
-    .modal-header { font-size: 1.1rem; font-weight: 800; color: #34d399; margin-bottom: 8px; }
-    .modal-body { font-size: 0.8rem; color: #d1d5db; line-height: 1.4; margin-bottom: 14px; }
-    .modal-code {
-      background: #090b0e;
-      border: 1px solid #1f2937;
-      border-radius: 8px;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 0.7rem;
-      color: #fcd34d;
-      white-space: pre-wrap;
-      max-height: 160px;
-      overflow-y: auto;
-      margin-bottom: 14px;
-    }
-    .btn-modal-close {
-      width: 100%;
-      background: #10b981;
-      color: #0d0f14;
-      font-weight: 800;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>🎧 MFE Vocal Engine</h1>
-    <div class="subtitle">Mondegreen Familiarity Engine • Dynamic Phase-Aligned DSP</div>
+    <h1>🌾 MFE Vocal Engine</h1>
+    <div class="subtitle">Americana Nostalgia • Real-Time Near-Language DSP</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
 
     <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
 
-    <!-- Real-Time Physicality Gauge -->
+    <!-- Real-Time Room Physicality Gauge -->
     <div class="physicality-card">
       <div class="physicality-header">
         <span class="physicality-title">🔊 ROOM PHYSICALITY GAUGE</span>
@@ -395,7 +348,7 @@
         </div>
       </div>
 
-      <!-- 60-Second Real-Time Impact Timeline Canvas -->
+      <!-- 60-Second Real-Time History -->
       <div class="timeline-container">
         <div class="timeline-title">
           <span>60s Impact History</span>
@@ -405,12 +358,12 @@
       </div>
     </div>
 
-    <!-- Unique Mix Hall of Fame -->
+    <!-- Live Memory Slots (Locked Presets) -->
     <div class="highlights-container">
-      <div class="highlights-title">🏆 Top Physical Replays (Unique Stacks)</div>
+      <div class="highlights-title">⭐ Live Preset Palette (High Score Memory)</div>
       <div class="replay-list" id="replay-list">
         <div style="font-size: 0.75rem; color: var(--subtext); text-align: center; padding: 6px;">
-          No unique peak moments captured yet. Push MORE or DIFFERENT to trigger peaks!
+          No stacks locked yet. Push MORE or DIFFERENT to trigger peaks!
         </div>
       </div>
     </div>
@@ -423,22 +376,22 @@
         <span class="layer-pan">Center</span>
       </div>
       <div class="layer-row">
-        <span class="layer-role" style="color: #34d399;">ANCHOR (R1 85%)</span>
+        <span class="layer-role" style="color: #34d399;">ANCHOR (R1 Road)</span>
         <span class="layer-file" id="lbl-anchor">Muted</span>
         <span class="layer-pan">Center</span>
       </div>
       <div class="layer-row">
-        <span class="layer-role" style="color: #fcd34d;">LEAD (R2 70%)</span>
+        <span class="layer-role" style="color: #fcd34d;">LEAD (R2 Sesame Folk)</span>
         <span class="layer-file" id="lbl-lead">Muted</span>
         <span class="layer-pan">Left 25%</span>
       </div>
       <div class="layer-row">
-        <span class="layer-role" style="color: #c084fc;">COUNTER (R3 55%)</span>
+        <span class="layer-role" style="color: #c084fc;">COUNTER (R3 Mondegreen)</span>
         <span class="layer-file" id="lbl-counter">Muted</span>
         <span class="layer-pan">Right 35%</span>
       </div>
       <div class="layer-row">
-        <span class="layer-role" style="color: #f472b6;">ECHO (R4 40%)</span>
+        <span class="layer-role" style="color: #f472b6;">ECHO (R4 Somatic)</span>
         <span class="layer-file" id="lbl-echo">Muted</span>
         <span class="layer-pan">Left 50%</span>
       </div>
@@ -461,19 +414,19 @@
       <button class="btn-ctrl" onclick="mfe.replayMotif()">
         <span class="icon">🔁</span>
         AGAIN
-        <span class="sub">Queue Replay</span>
+        <span class="sub">Repeat Motif</span>
       </button>
 
       <button class="btn-ctrl" onclick="mfe.swapStems()">
         <span class="icon">🔀</span>
         DIFFERENT
-        <span class="sub">Shuffle Vocals</span>
+        <span class="sub">Shuffle Stems</span>
       </button>
 
       <button class="btn-ctrl btn-snap" onclick="mfe.triggerSnap()">
         <span class="icon">⚡</span>
         SNAP
-        <span class="sub">1 Beat + 1 Voice</span>
+        <span class="sub">Resolution Snap</span>
       </button>
 
       <button class="btn-ctrl btn-restart" onclick="mfe.restartEngine()">
@@ -487,18 +440,6 @@
         STOP ALL
         <span class="sub">Immediate Silence</span>
       </button>
-    </div>
-  </div>
-
-  <!-- SeedBloom Modal Bridge -->
-  <div class="modal-overlay" id="bridge-modal">
-    <div class="modal-card">
-      <div class="modal-header">🌱 Exported to SeedBloom Nursery</div>
-      <div class="modal-body">
-        This peak MFE physical snapshot has been converted into a musical Seed! You can now send this payload directly into SeedBloom to generate sprouts, set your BPM, and grow it into a full song.
-      </div>
-      <div class="modal-code" id="modal-json-payload"></div>
-      <button class="btn-modal-close" onclick="document.getElementById('bridge-modal').style.display='none'">Close & Return to Live Engine</button>
     </div>
   </div>
 
@@ -526,27 +467,29 @@
         this.sessionPeakScore = 0;
         this.uniqueMixMap = new Map();
         
-        // 60-Second Timeline Buffer
+        // 60-Second Timeline Ring Buffer
         this.timelineHistory = new Array(120).fill(0);
         this.timelineCanvas = null;
         this.timelineCtx = null;
 
         this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
+        
+        // Categorized Americana Stems
         this.beatManifest = [
-          { id: 'b1', name: 'Heavy Runnin (Beat 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
-          { id: 'b2', name: 'Steady Coming (Beat 2)', path: 'beats/beats2.Steady Coming.mp3' },
-          { id: 'b3', name: 'Have Heaven, Honey (Beat 3)', path: 'beats/beats3.Have Heaven, Honey.mp3' },
-          { id: 'b4', name: 'Ray of Light (Beat 4)', path: 'beats/beats4.Ray of Light.mp3' },
-          { id: 'b5', name: 'Sunshine Rider (Beat 5)', path: 'beats/beats5.sunshine rider.mp3' }
+          { id: 'b1', name: 'Heavy Runnin (Motor 1)', category: 'Motor Floor', path: 'beats/beats1. Heavy Runnin.mp3' },
+          { id: 'b2', name: 'Steady Coming (Motor 2)', category: 'Motor Floor', path: 'beats/beats2.Steady Coming.mp3' },
+          { id: 'b3', name: 'Have Heaven, Honey (Road 3)', category: 'Americana Road', path: 'beats/beats3.Have Heaven, Honey.mp3' },
+          { id: 'b4', name: 'Ray of Light (Horizon 4)', category: 'Horizon', path: 'beats/beats4.Ray of Light.mp3' },
+          { id: 'b5', name: 'Sunshine Rider (Motor 5)', category: 'Motor Floor', path: 'beats/beats5.sunshine rider.mp3' }
         ];
         this.vocalManifest = [
-          { id: 'v7', name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' },
-          { id: 'v1', name: 'Sunshine Rider (Vocal 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
-          { id: 'v2', name: 'Ray of Light (Vocal 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
-          { id: 'v3', name: 'Ray of Light (Vocal 3)', path: 'vocals/vocal3.Ray of Light.mp3' },
-          { id: 'v4', name: 'Have Heaven, Honey (Vocal 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
-          { id: 'v5', name: 'Steady Coming (Vocal 5)', path: 'vocals/vocal5.Steady Coming.mp3' },
-          { id: 'v6', name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' }
+          { id: 'v7', name: 'Sesame Seed (Sesame Folk 7)', category: 'Sesame Folk', path: 'vocals/vocal7.sesame seed.mp3' },
+          { id: 'v1', name: 'Sunshine Rider (Road 1)', category: 'Americana Road', path: 'vocals/vocal1.sunshine rider.mp3' },
+          { id: 'v2', name: 'Ray of Light (Horizon 2)', category: 'Horizon', path: 'vocals/vocal2.Ray of Light.mp3' },
+          { id: 'v3', name: 'Ray of Light (Horizon 3)', category: 'Horizon', path: 'vocals/vocal3.Ray of Light.mp3' },
+          { id: 'v4', name: 'Have Heaven, Honey (Folk 4)', category: 'Sesame Folk', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
+          { id: 'v5', name: 'Steady Coming (Road 5)', category: 'Americana Road', path: 'vocals/vocal5.Steady Coming.mp3' },
+          { id: 'v6', name: 'Heavy Runnin (Somatic 6)', category: 'Somatic', path: 'vocals/vocal6.Heavy Runnin.mp3' }
         ];
       }
 
@@ -594,19 +537,19 @@
           if (this.activeRoles.size > 0) {
             this.analyser.getByteFrequencyData(freqData);
 
-            // 1. Sub-bass / Low-Frequency Pressure (0-250Hz)
+            // 1. Low-Frequency Pressure (0-250Hz)
             let bassSum = 0;
             for (let i = 0; i < 12; i++) bassSum += freqData[i];
             let rawBassNorm = bassSum / (12 * 255);
             let bassScore = Math.min(100, Math.round(Math.pow(rawBassNorm, 2.2) * 115));
 
-            // 2. Vocal Formant Density (250Hz-4kHz)
+            // 2. Mid-High Vocal Formant Density (250Hz-4kHz)
             let vocalSum = 0;
             for (let i = 13; i < 180; i++) vocalSum += freqData[i];
             let rawVocalNorm = vocalSum / (167 * 255);
             let vocalScore = Math.min(100, Math.round(Math.pow(rawVocalNorm, 2.0) * 110));
 
-            // 3. Layer Composite Impact
+            // 3. Composite Physical Impact Score
             let activeRatio = (this.activeRoles.size / 5);
             let rawTotal = (bassScore * 0.45) + (vocalScore * 0.35) + (activeRatio * 20);
 
@@ -627,7 +570,7 @@
             document.getElementById('bar-total').style.width = totalImpact + '%';
             document.getElementById('txt-total').innerText = totalImpact + '%';
 
-            // Push to rolling timeline history every 500ms
+            // Push to rolling history canvas every 500ms
             if (now - lastHistoryPush > 500) {
               this.timelineHistory.shift();
               this.timelineHistory.push(totalImpact);
@@ -635,7 +578,6 @@
               lastHistoryPush = now;
             }
 
-            // Deduplicated Unique Mix Record Engine
             if (totalImpact > 45) {
               this.processPeakScore(totalImpact);
             }
@@ -679,7 +621,6 @@
         const fingerprint = this.getMixFingerprint(this.activeRoles, this.lastPlayedStem);
         const existingEntry = this.uniqueMixMap.get(fingerprint);
 
-        // Only update if it's a new unique combo or beats its previous score
         if (!existingEntry || score > existingEntry.score) {
           const capturedOffsets = {};
           this.activeRoles.forEach(role => {
@@ -710,7 +651,6 @@
             document.getElementById('peak-score-display').innerText = `RECORD: ${this.sessionPeakScore}%`;
           }
 
-          // Rebuild UI only when a record changes (avoids frame thrashing)
           this.renderHighlightsUI();
         }
       }
@@ -726,7 +666,7 @@
         if (sortedEntries.length === 0) {
           listEl.innerHTML = `
             <div style="font-size: 0.75rem; color: var(--subtext); text-align: center; padding: 6px;">
-              No unique peak moments captured yet. Push MORE or DIFFERENT to trigger peaks!
+              No stacks locked yet. Push MORE or DIFFERENT to trigger peaks!
             </div>`;
           return;
         }
@@ -739,18 +679,15 @@
 
           card.innerHTML = `
             <div class="replay-card-header">
-              <span class="replay-card-title">Replay #${idx + 1} (${hl.roles.length} Active Stalks)</span>
+              <span class="replay-card-title">Preset #${idx + 1} (${hl.roles.length} Active Stalks)</span>
               <span class="replay-card-score">${hl.score}% IMPACT</span>
             </div>
             <div class="replay-card-details">
-              Peak at ${formatTime(hl.peakSecondOffset)} • Engine Time: ${hl.timestamp}
+              Captured @ ${formatTime(hl.peakSecondOffset)} • Engine Time: ${hl.timestamp}
             </div>
             <div class="replay-card-actions">
-              <button class="btn-replay-action" onclick="mfe.replayUniqueSnapshot('${hl.fingerprint}')">
-                ▶️ Exact Replay
-              </button>
-              <button class="btn-replay-action btn-grow" onclick="mfe.exportToSeedBloom('${hl.fingerprint}')">
-                🌱 GROW THIS
+              <button class="btn-replay-action btn-lock" onclick="mfe.replayUniqueSnapshot('${hl.fingerprint}')">
+                ⚡ RECALL PRESET #${idx + 1}
               </button>
             </div>
           `;
@@ -767,7 +704,7 @@
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = `💥 Synchronized Replay (${hl.score}% Peak Impact)`;
+        statusEl.innerText = `⚡ Recalled Preset (${hl.score}% Peak Impact)`;
 
         hl.roles.forEach(role => {
           this.activeRoles.add(role);
@@ -807,41 +744,7 @@
 
         this.activeNodes[role] = { source, gainNode, stem, startTime };
         this.lastPlayedStem[role] = stem;
-        document.getElementById(config.el).innerText = `${stem.name} [Phase @ ${offset.toFixed(1)}s]`;
-      }
-
-      exportToSeedBloom(fingerprint) {
-        const hl = this.uniqueMixMap.get(fingerprint);
-        if (!hl) return;
-
-        let beautyRating = 3;
-        if (hl.score >= 85) beautyRating = 5;
-        else if (hl.score >= 70) beautyRating = 4;
-        else if (hl.score >= 55) beautyRating = 3;
-        else if (hl.score >= 40) beautyRating = 2;
-        else beautyRating = 1;
-
-        const seedPayload = {
-          seedSource: "Mondegreen Familiarity Engine (MFE)",
-          fingerprint: hl.fingerprint,
-          physicalImpactScore: `${hl.score}%`,
-          seedBloomBeautyRating: beautyRating,
-          activeLayerCount: hl.roles.length,
-          peakTimestamp: hl.timestamp,
-          stems: hl.roles.map(r => ({
-            role: r,
-            stemName: hl.stems[r] ? hl.stems[r].name : 'Muted',
-            startOffset: `${(hl.offsets[r] || 0).toFixed(2)}s`
-          })),
-          nurseryInstructions: {
-            bpm: 105,
-            suggestedSproutNotes: ["C4", "E4", "G4", "B4"],
-            growthStage: "Sprout -> Rooted Loop"
-          }
-        };
-
-        document.getElementById('modal-json-payload').innerText = JSON.stringify(seedPayload, null, 2);
-        document.getElementById('bridge-modal').style.display = 'flex';
+        document.getElementById(config.el).innerText = `${stem.name} [Offset ${offset.toFixed(1)}s]`;
       }
 
       calculateRMS(buffer) {
@@ -1096,6 +999,7 @@
         });
       }
 
+      // Phonetic Resolution Snap Action (R0/R1 Reset)
       triggerSnap() {
         this.initContext();
 
@@ -1115,6 +1019,10 @@
           this.activeRoles.add('anchor');
           this.playRoleNext('anchor');
         }
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = '⚡ Resolution Snap • Re-Anchored to Baseline';
       }
 
       restartEngine() {
