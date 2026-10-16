@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>MFE Vocal Engine</title>
+  
+  <!-- PWA & Mobile Home Screen Meta Tags -->
+  <meta name="theme-color" content="#0d0f14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MFE Engine">
+  <link rel="manifest" href='data:application/json,{"name":"MFE Vocal Engine","short_name":"MFE Engine","start_url":".","display":"standalone","background_color":"#0d0f14","theme_color":"#0d0f14"}'>
+
   <style>
     :root {
       --bg: #0d0f14;
@@ -139,7 +148,7 @@
 
   <div class="container">
     <h1>🎧 MFE Vocal Engine</h1>
-    <div class="subtitle">Mondegreen Familiarity Engine • Mobile Auto-Stream</div>
+    <div class="subtitle">Mondegreen Familiarity Engine • Instant PWA Caching</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
 
@@ -303,11 +312,28 @@
         return slices;
       }
 
+      // PWA Persistent Audio Caching Engine
       async fetchAndDecode(path) {
         const fullUrl = encodeURI(this.baseUrl + path);
-        const res = await fetch(fullUrl);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const arrayBuf = await res.arrayBuffer();
+        const cacheName = 'mfe-audio-v1';
+        let arrayBuf;
+
+        try {
+          const cache = await caches.open(cacheName);
+          let response = await cache.match(fullUrl);
+          
+          if (!response) {
+            response = await fetch(fullUrl);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            cache.put(fullUrl, response.clone());
+          }
+          arrayBuf = await response.arrayBuffer();
+        } catch(e) {
+          const res = await fetch(fullUrl);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          arrayBuf = await res.arrayBuffer();
+        }
+
         return await new Promise((resolve, reject) => {
           this.ctx.decodeAudioData(arrayBuf, resolve, reject);
         });
@@ -325,7 +351,7 @@
 
         for (let item of this.beatManifest) {
           try {
-            statusEl.innerText = `⏳ Loading beats from GitHub... (${loadedCount}/${totalFiles})`;
+            statusEl.innerText = `⚡ Preparing audio storage... (${loadedCount}/${totalFiles})`;
             const decoded = await this.fetchAndDecode(item.path);
             this.beatBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
           } catch(e) {
@@ -336,7 +362,7 @@
 
         for (let item of this.vocalManifest) {
           try {
-            statusEl.innerText = `⏳ Loading vocals from GitHub... (${loadedCount}/${totalFiles})`;
+            statusEl.innerText = `⚡ Preparing audio storage... (${loadedCount}/${totalFiles})`;
             const decoded = await this.fetchAndDecode(item.path);
             this.vocalBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
           } catch(e) {
@@ -363,7 +389,7 @@
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = `Active • ${this.beatBuffers.length} Beats | ${this.vocalBuffers.length} Vocal Stems Streamed`;
+        statusEl.innerText = `Active • Cached & Ready (${this.beatBuffers.length} Beats | ${this.vocalBuffers.length} Vocals)`;
       }
 
       getRandomBuffer(role) {
