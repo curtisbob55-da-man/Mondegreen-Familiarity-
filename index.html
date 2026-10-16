@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>MFE Vocal Engine</title>
+  <title>MFE Vocal Engine • Non-Linear Physicality DSP</title>
   
   <meta name="theme-color" content="#0d0f14">
   <meta name="mobile-web-app-capable" content="yes">
@@ -88,7 +88,7 @@
     .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
     .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
 
-    /* Physicality Meter UI */
+    /* Room Physicality Card */
     .physicality-card {
       background: #090b0e;
       border: 1px solid #1f2937;
@@ -106,9 +106,6 @@
       font-size: 0.85rem;
       font-weight: 700;
       color: #f3f4f6;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
     .peak-score-tag {
       font-size: 0.75rem;
@@ -135,7 +132,6 @@
       background: #1f2430;
       border-radius: 4px;
       overflow: hidden;
-      position: relative;
     }
     .meter-bar-fill {
       height: 100%;
@@ -147,10 +143,34 @@
     .fill-vocal { background: linear-gradient(90deg, #c084fc, #f472b6); }
     .fill-total { background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); }
 
-    /* Highlight Reel Replays */
+    /* 60-Second Real-Time Impact Timeline Canvas */
+    .timeline-container {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px dashed #1f2937;
+    }
+    .timeline-title {
+      font-size: 0.68rem;
+      color: var(--subtext);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    canvas#impact-canvas {
+      width: 100%;
+      height: 36px;
+      background: #11141d;
+      border-radius: 6px;
+      border: 1px solid #1f2430;
+      display: block;
+    }
+
+    /* Unique Mix Hall of Fame */
     .highlights-container {
       background: #11141d;
-      border: 1px dashed #374151;
+      border: 1px solid #272c3a;
       border-radius: 14px;
       padding: 12px;
       margin-bottom: 16px;
@@ -166,25 +186,63 @@
     .replay-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
-    .replay-btn {
+    .replay-card {
       background: #1a202c;
       border: 1px solid #2d3748;
-      color: #fff;
-      padding: 8px 12px;
       border-radius: 10px;
-      font-size: 0.78rem;
-      font-weight: 600;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .replay-card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      cursor: pointer;
-      transition: all 0.15s ease;
     }
-    .replay-btn:active { transform: scale(0.97); background: #2d3748; }
-    .replay-btn .badge { background: #3b82f6; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
+    .replay-card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .replay-card-score {
+      background: #3b82f6;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+    .replay-card-details {
+      font-size: 0.7rem;
+      color: var(--subtext);
+    }
+    .replay-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .btn-replay-action {
+      flex: 1;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #374151;
+      background: #252a37;
+      color: #f3f4f6;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .btn-replay-action:active { transform: scale(0.97); }
+    .btn-grow { border-color: rgba(16, 185, 129, 0.5); color: #34d399; background: rgba(16, 185, 129, 0.15); }
 
+    /* Stem Display */
     .layer-display {
       background: #0d0f14;
       border-radius: 14px;
@@ -212,6 +270,7 @@
     }
     .layer-pan { font-size: 0.7rem; background: #252a37; padding: 2px 6px; border-radius: 4px; }
     
+    /* Controls Grid */
     .controls-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -240,19 +299,65 @@
     .btn-snap { border-color: rgba(16, 185, 129, 0.6); color: #34d399; background: rgba(16, 185, 129, 0.12); }
     .btn-restart { border-color: rgba(192, 132, 252, 0.6); color: #c084fc; background: rgba(192, 132, 252, 0.12); }
     .btn-stop { border-color: rgba(239, 68, 68, 0.6); color: #f87171; grid-column: span 3; margin-top: 4px; background: #2a1619; padding: 16px; }
+
+    /* Modal Dialog for SeedBloom Export Bridge */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #161922;
+      border: 1px solid #10b981;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.8);
+    }
+    .modal-header { font-size: 1.1rem; font-weight: 800; color: #34d399; margin-bottom: 8px; }
+    .modal-body { font-size: 0.8rem; color: #d1d5db; line-height: 1.4; margin-bottom: 14px; }
+    .modal-code {
+      background: #090b0e;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.7rem;
+      color: #fcd34d;
+      white-space: pre-wrap;
+      max-height: 160px;
+      overflow-y: auto;
+      margin-bottom: 14px;
+    }
+    .btn-modal-close {
+      width: 100%;
+      background: #10b981;
+      color: #0d0f14;
+      font-weight: 800;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
     <h1>🎧 MFE Vocal Engine</h1>
-    <div class="subtitle">Mondegreen Familiarity Engine • Non-Linear Physicality DSP</div>
+    <div class="subtitle">Mondegreen Familiarity Engine • Dynamic Phase-Aligned DSP</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
 
     <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
 
-    <!-- Real-Time Room Physicality Gauge -->
+    <!-- Real-Time Physicality Gauge -->
     <div class="physicality-card">
       <div class="physicality-header">
         <span class="physicality-title">🔊 ROOM PHYSICALITY GAUGE</span>
@@ -289,19 +394,28 @@
           </div>
         </div>
       </div>
+
+      <!-- 60-Second Dynamic Physicality Rolling History -->
+      <div class="timeline-container">
+        <div class="timeline-title">
+          <span>60s Impact History</span>
+          <span id="canvas-status">Live</span>
+        </div>
+        <canvas id="impact-canvas" width="450" height="36"></canvas>
+      </div>
     </div>
 
-    <!-- Highlight Reel / Replays -->
+    <!-- Unique Mix Hall of Fame -->
     <div class="highlights-container">
-      <div class="highlights-title">🎬 Top Physical Replays (High Scores)</div>
+      <div class="highlights-title">🏆 Top Physical Replays (Unique Stacks)</div>
       <div class="replay-list" id="replay-list">
         <div style="font-size: 0.75rem; color: var(--subtext); text-align: center; padding: 6px;">
-          No peak moments captured yet. Push MORE or DIFFERENT to generate physical peaks!
+          No unique peak moments captured yet. Push MORE or DIFFERENT to trigger peaks!
         </div>
       </div>
     </div>
 
-    <!-- Active Stem Display -->
+    <!-- Active Stems -->
     <div class="layer-display">
       <div class="layer-row">
         <span class="layer-role" style="color: #60a5fa;">BEAT (Motor Floor)</span>
@@ -376,6 +490,18 @@
     </div>
   </div>
 
+  <!-- SeedBloom Modal Bridge -->
+  <div class="modal-overlay" id="bridge-modal">
+    <div class="modal-card">
+      <div class="modal-header">🌱 Exported to SeedBloom Nursery</div>
+      <div class="modal-body">
+        This peak MFE physical snapshot has been converted into a musical Seed! You can now send this payload directly into SeedBloom to generate sprouts, set your BPM, and grow it into a full song.
+      </div>
+      <div class="modal-code" id="modal-json-payload"></div>
+      <button class="btn-modal-close" onclick="document.getElementById('bridge-modal').style.display='none'">Close & Return to Live Engine</button>
+    </div>
+  </div>
+
   <script>
     class MFEAudioEngine {
       constructor() {
@@ -398,24 +524,30 @@
         };
 
         this.sessionPeakScore = 0;
+        this.uniqueMixMap = new Map(); // Fingerprint -> Best Snapshot
         this.savedHighlights = [];
+
+        // 60-Second Timeline Ring Buffer
+        this.timelineHistory = new Array(120).fill(0); // 2 samples per sec = 60s
+        this.timelineCanvas = null;
+        this.timelineCtx = null;
 
         this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
         this.beatManifest = [
-          { name: 'Heavy Runnin (Beat 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
-          { name: 'Steady Coming (Beat 2)', path: 'beats/beats2.Steady Coming.mp3' },
-          { name: 'Have Heaven, Honey (Beat 3)', path: 'beats/beats3.Have Heaven, Honey.mp3' },
-          { name: 'Ray of Light (Beat 4)', path: 'beats/beats4.Ray of Light.mp3' },
-          { name: 'Sunshine Rider (Beat 5)', path: 'beats/beats5.sunshine rider.mp3' }
+          { id: 'b1', name: 'Heavy Runnin (Beat 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
+          { id: 'b2', name: 'Steady Coming (Beat 2)', path: 'beats/beats2.Steady Coming.mp3' },
+          { id: 'b3', name: 'Have Heaven, Honey (Beat 3)', path: 'beats/beats3.Have Heaven, Honey.mp3' },
+          { id: 'b4', name: 'Ray of Light (Beat 4)', path: 'beats/beats4.Ray of Light.mp3' },
+          { id: 'b5', name: 'Sunshine Rider (Beat 5)', path: 'beats/beats5.sunshine rider.mp3' }
         ];
         this.vocalManifest = [
-          { name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' },
-          { name: 'Sunshine Rider (Vocal 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
-          { name: 'Ray of Light (Vocal 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
-          { name: 'Ray of Light (Vocal 3)', path: 'vocals/vocal3.Ray of Light.mp3' },
-          { name: 'Have Heaven, Honey (Vocal 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
-          { name: 'Steady Coming (Vocal 5)', path: 'vocals/vocal5.Steady Coming.mp3' },
-          { name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' }
+          { id: 'v7', name: 'Sesame Seed (Vocal 7)', path: 'vocals/vocal7.sesame seed.mp3' },
+          { id: 'v1', name: 'Sunshine Rider (Vocal 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
+          { id: 'v2', name: 'Ray of Light (Vocal 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
+          { id: 'v3', name: 'Ray of Light (Vocal 3)', path: 'vocals/vocal3.Ray of Light.mp3' },
+          { id: 'v4', name: 'Have Heaven, Honey (Vocal 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
+          { id: 'v5', name: 'Steady Coming (Vocal 5)', path: 'vocals/vocal5.Steady Coming.mp3' },
+          { id: 'v6', name: 'Heavy Runnin (Vocal 6)', path: 'vocals/vocal6.Heavy Runnin.mp3' }
         ];
       }
 
@@ -426,417 +558,15 @@
 
           this.masterGain = this.ctx.createGain();
           this.analyser = this.ctx.createAnalyser();
-          this.analyser.fftSize = 1024; // Finer frequency resolution
+          this.analyser.fftSize = 1024;
 
           this.masterGain.connect(this.analyser);
           this.analyser.connect(this.ctx.destination);
 
+          this.initTimelineCanvas();
           this.startPhysicalityLoop();
         }
         if (this.ctx.state === 'suspended') {
           this.ctx.resume();
         }
-      }
-
-      // Exponential Exponential Power-Curve DSP Loop
-      startPhysicalityLoop() {
-        const freqData = new Uint8Array(this.analyser.frequencyBinCount);
-        
-        const updateMeters = () => {
-          if (this.activeRoles.size > 0) {
-            this.analyser.getByteFrequencyData(freqData);
-
-            // 1. Sub-bass / Low-Frequency Pressure (Bins 0 to 12 -> 0-250Hz)
-            let bassSum = 0;
-            for (let i = 0; i < 12; i++) bassSum += freqData[i];
-            let rawBassNorm = bassSum / (12 * 255); // 0.0 to 1.0
-            
-            // Apply Power Curve (Power^2.2) to steepen the high end
-            let bassScore = Math.min(100, Math.round(Math.pow(rawBassNorm, 2.2) * 115));
-
-            // 2. Vocal Formant Density (Bins 13 to 180 -> 250Hz-4kHz)
-            let vocalSum = 0;
-            for (let i = 13; i < 180; i++) vocalSum += freqData[i];
-            let rawVocalNorm = vocalSum / (167 * 255); // 0.0 to 1.0
-            let vocalScore = Math.min(100, Math.round(Math.pow(rawVocalNorm, 2.0) * 110));
-
-            // 3. Layer Density Multiplier (Requires full stack for maximum potential)
-            let activeRatio = (this.activeRoles.size / 5); // 0.2 to 1.0
-            
-            // Raw composite energy
-            let rawTotal = (bassScore * 0.45) + (vocalScore * 0.35) + (activeRatio * 20);
-
-            // Steep exponential ceiling above 80% (making 100% an elusive peak)
-            let totalImpact = 0;
-            if (rawTotal <= 80) {
-              totalImpact = Math.round(rawTotal);
-            } else {
-              // Compress 80-110 raw energy range tightly into 80-100%
-              let overflow = (rawTotal - 80) / 30; // 0.0 to 1.0
-              totalImpact = Math.min(100, Math.round(80 + (Math.pow(overflow, 1.8) * 20)));
-            }
-
-            document.getElementById('bar-bass').style.width = bassScore + '%';
-            document.getElementById('txt-bass').innerText = bassScore + '%';
-
-            document.getElementById('bar-vocal').style.width = vocalScore + '%';
-            document.getElementById('txt-vocal').innerText = vocalScore + '%';
-
-            document.getElementById('bar-total').style.width = totalImpact + '%';
-            document.getElementById('txt-total').innerText = totalImpact + '%';
-
-            // Auto-Record High Score Record
-            if (totalImpact > this.sessionPeakScore && totalImpact > 40) {
-              this.sessionPeakScore = totalImpact;
-              document.getElementById('peak-score-display').innerText = `RECORD: ${this.sessionPeakScore}%`;
-              this.recordHighlight(totalImpact);
-            }
-          } else {
-            document.getElementById('bar-bass').style.width = '0%';
-            document.getElementById('txt-bass').innerText = '0%';
-            document.getElementById('bar-vocal').style.width = '0%';
-            document.getElementById('txt-vocal').innerText = '0%';
-            document.getElementById('bar-total').style.width = '0%';
-            document.getElementById('txt-total').innerText = '0%';
-          }
-          requestAnimationFrame(updateMeters);
-        };
-        requestAnimationFrame(updateMeters);
-      }
-
-      recordHighlight(score) {
-        const snapshot = {
-          id: Date.now(),
-          score: score,
-          roles: Array.from(this.activeRoles),
-          stems: { ...this.lastPlayedStem },
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-        };
-
-        this.savedHighlights.unshift(snapshot);
-        this.savedHighlights.sort((a, b) => b.score - a.score);
-        this.savedHighlights = this.savedHighlights.slice(0, 3);
-
-        this.renderHighlightsUI();
-      }
-
-      renderHighlightsUI() {
-        const listEl = document.getElementById('replay-list');
-        listEl.innerHTML = '';
-
-        this.savedHighlights.forEach((hl, idx) => {
-          const btn = document.createElement('button');
-          btn.className = 'replay-btn';
-          btn.onclick = () => this.replayHighlight(hl);
-          btn.innerHTML = `
-            <span>💥 Replay #${idx + 1} (${hl.roles.length} Layers @ ${hl.time})</span>
-            <span class="badge">${hl.score}% IMPACT</span>
-          `;
-          listEl.appendChild(btn);
-        });
-      }
-
-      replayHighlight(hl) {
-        this.initContext();
-        this.stopAll();
-
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = `💥 Replaying Peak Record (${hl.score}% Impact)`;
-
-        hl.roles.forEach(role => {
-          this.activeRoles.add(role);
-          const stemToPlay = hl.stems[role];
-          this.playRoleNext(role, stemToPlay);
-        });
-      }
-
-      calculateRMS(buffer) {
-        const data = buffer.getChannelData(0);
-        let sum = 0;
-        for (let i = 0; i < data.length; i += 100) {
-          sum += data[i] * data[i];
-        }
-        return Math.sqrt(sum / (data.length / 100));
-      }
-
-      sliceAudioBuffer(fullBuffer, fileName, numSlices = 6) {
-        const slices = [];
-        const totalSamples = fullBuffer.length;
-        const sliceSamples = Math.floor(totalSamples / numSlices);
-        const channels = fullBuffer.numberOfChannels;
-        const sampleRate = fullBuffer.sampleRate;
-
-        for (let i = 0; i < numSlices; i++) {
-          const startSample = i * sliceSamples;
-          const sliceBuffer = this.ctx.createBuffer(channels, sliceSamples, sampleRate);
-
-          for (let ch = 0; ch < channels; ch++) {
-            const channelData = fullBuffer.getChannelData(ch);
-            const sliceData = sliceBuffer.getChannelData(ch);
-            sliceData.set(channelData.subarray(startSample, startSample + sliceSamples));
-          }
-
-          const rms = this.calculateRMS(sliceBuffer);
-          if (rms > 0.005) {
-            slices.push({
-              name: `${fileName} [Slice ${i + 1}]`,
-              buffer: sliceBuffer
-            });
-          }
-        }
-        return slices;
-      }
-
-      async fetchAndDecode(path) {
-        const fullUrl = encodeURI(this.baseUrl + path);
-        const cacheName = 'mfe-audio-v1';
-        let arrayBuf;
-
-        try {
-          const cache = await caches.open(cacheName);
-          let response = await cache.match(fullUrl);
-          
-          if (!response) {
-            response = await fetch(fullUrl);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            cache.put(fullUrl, response.clone());
-          }
-          arrayBuf = await response.arrayBuffer();
-        } catch(e) {
-          const res = await fetch(fullUrl);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          arrayBuf = await res.arrayBuffer();
-        }
-
-        return await new Promise((resolve, reject) => {
-          this.ctx.decodeAudioData(arrayBuf, resolve, reject);
-        });
-      }
-
-      async startApp() {
-        this.initContext();
-        document.getElementById('start-btn').style.display = 'none';
-
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge loading';
-        statusEl.innerText = '⚡ Starting instant baseline...';
-
-        try {
-          const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
-          this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 6));
-
-          const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
-          this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 6));
-
-          this.syncEngineState();
-        } catch(e) {
-          console.warn("Fast start fallback", e);
-        }
-
-        this.loadRemainingBackground();
-      }
-
-      async loadRemainingBackground() {
-        const statusEl = document.getElementById('status-badge');
-        
-        for (let i = 1; i < this.beatManifest.length; i++) {
-          try {
-            const item = this.beatManifest[i];
-            const decoded = await this.fetchAndDecode(item.path);
-            this.beatBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
-          } catch(e) {}
-        }
-
-        for (let i = 1; i < this.vocalManifest.length; i++) {
-          try {
-            const item = this.vocalManifest[i];
-            const decoded = await this.fetchAndDecode(item.path);
-            this.vocalBuffers.push(...this.sliceAudioBuffer(decoded, item.name, 6));
-          } catch(e) {}
-        }
-
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = `Active • All ${this.beatBuffers.length} Beats & ${this.vocalBuffers.length} Vocals Ready`;
-      }
-
-      syncEngineState() {
-        this.initContext();
-
-        if (this.beatBuffers.length > 0 && !this.activeRoles.has('beat')) {
-          this.activeRoles.add('beat');
-          this.playRoleNext('beat');
-        }
-
-        if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
-          this.activeRoles.add('anchor');
-          this.playRoleNext('anchor');
-        }
-
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = 'Playing • Buffering background stems...';
-      }
-
-      getRandomBuffer(role) {
-        const pool = (role === 'beat') ? this.beatBuffers : this.vocalBuffers;
-        if (pool.length === 0) return null;
-        return pool[Math.floor(Math.random() * pool.length)];
-      }
-
-      stopRoleNode(role) {
-        if (this.activeNodes[role]) {
-          try {
-            this.activeNodes[role].source.onended = null;
-            this.activeNodes[role].source.stop();
-          } catch(e) {}
-          this.activeNodes[role] = null;
-        }
-      }
-
-      playRoleNext(role, explicitStem = null) {
-        if (!this.activeRoles.has(role)) return;
-
-        this.initContext();
-        this.stopRoleNode(role);
-
-        const stem = explicitStem || this.getRandomBuffer(role);
-        if (!stem) return;
-
-        const config = this.panConfig[role];
-        const source = this.ctx.createBufferSource();
-        source.buffer = stem.buffer;
-        source.loop = false;
-
-        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
-        if (panner) panner.pan.value = config.pan;
-
-        const gainNode = this.ctx.createGain();
-        gainNode.gain.value = (role === 'beat') ? 0.75 : 0.85;
-
-        if (panner) {
-          source.connect(panner);
-          panner.connect(gainNode);
-        } else {
-          source.connect(gainNode);
-        }
-
-        gainNode.connect(this.masterGain);
-
-        source.onended = () => {
-          if (this.activeRoles.has(role)) {
-            if (this.queuedStem[role]) {
-              const queued = this.queuedStem[role];
-              this.queuedStem[role] = null;
-              this.playRoleNext(role, queued);
-            } else {
-              this.playRoleNext(role);
-            }
-          }
-        };
-
-        source.start(0);
-
-        this.activeNodes[role] = { source, gainNode, stem };
-        this.lastPlayedStem[role] = stem;
-        document.getElementById(config.el).innerText = stem.name;
-      }
-
-      addLayer() {
-        const vocalRoles = ['lead', 'counter', 'echo'];
-        for (let role of vocalRoles) {
-          if (!this.activeRoles.has(role)) {
-            this.activeRoles.add(role);
-            this.playRoleNext(role);
-            break;
-          }
-        }
-      }
-
-      removeLayer() {
-        const vocalRoles = ['echo', 'counter', 'lead'];
-        for (let role of vocalRoles) {
-          if (this.activeRoles.has(role)) {
-            this.activeRoles.delete(role);
-            this.stopRoleNode(role);
-            document.getElementById(this.panConfig[role].el).innerText = 'Muted';
-            break;
-          }
-        }
-      }
-
-      replayMotif() {
-        let activeCount = 0;
-        this.layerOrder.forEach(role => {
-          if (this.activeRoles.has(role) && this.activeNodes[role]) {
-            activeCount++;
-            this.queuedStem[role] = this.lastPlayedStem[role];
-            const config = this.panConfig[role];
-            const currentName = this.lastPlayedStem[role] ? this.lastPlayedStem[role].name : 'Active';
-            document.getElementById(config.el).innerText = `⌛ ${currentName} (Replaying Next)`;
-          }
-        });
-
-        if (activeCount === 0) {
-          this.syncEngineState();
-        } else {
-          const statusEl = document.getElementById('status-badge');
-          statusEl.className = 'status-badge active';
-          statusEl.innerText = 'Replay Queued • Will repeat after current loop finishes';
-        }
-      }
-
-      swapStems() {
-        this.layerOrder.forEach(role => {
-          if (this.activeRoles.has(role)) {
-            this.queuedStem[role] = null;
-            this.playRoleNext(role);
-          }
-        });
-      }
-
-      triggerSnap() {
-        this.initContext();
-
-        ['lead', 'counter', 'echo'].forEach(role => {
-          this.activeRoles.delete(role);
-          this.queuedStem[role] = null;
-          this.stopRoleNode(role);
-          document.getElementById(this.panConfig[role].el).innerText = 'Muted';
-        });
-
-        if (this.beatBuffers.length > 0) {
-          this.activeRoles.add('beat');
-          this.playRoleNext('beat');
-        }
-
-        if (this.vocalBuffers.length > 0) {
-          this.activeRoles.add('anchor');
-          this.playRoleNext('anchor');
-        }
-      }
-
-      restartEngine() {
-        this.triggerSnap();
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = 'Reset • Baseline 1 Beat + 1 Vocal Active';
-      }
-
-      stopAll() {
-        this.activeRoles.clear();
-        this.layerOrder.forEach(role => {
-          this.queuedStem[role] = null;
-          this.stopRoleNode(role);
-          document.getElementById(this.panConfig[role].el).innerText = 'Stopped';
-        });
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge';
-        statusEl.innerText = 'Stopped • Tap SNAP, MORE, or RESTART to resume';
-      }
-    }
-
-    const mfe = new MFEAudioEngine();
-  </script>
-</body>
-</html>
+      
