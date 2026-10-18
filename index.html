@@ -199,7 +199,7 @@
 
         this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
         
-        // Existing isolated stem manifests
+        // Base stem manifests
         this.beatManifest = [
           { id: 'b1', name: 'Heavy Runnin (Motor 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
           { id: 'b2', name: 'Steady Coming (Motor 2)', path: 'beats/beats2.Steady Coming.mp3' },
@@ -212,11 +212,15 @@
           { id: 'v4', name: 'Have Heaven, Honey (Folk 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' }
         ];
 
-        // NEW 3rd Category: Full Combined Tracks in /seeds/
+        // Configured from your GitHub /seeds/ folder
         this.seedManifest = [
-          // Update file names below to match your uploaded 12 tracks in /seeds/
-          { id: 's1', name: 'Seed Track 1', path: 'seeds/seed1.mp3' },
-          { id: 's2', name: 'Seed Track 2', path: 'seeds/seed2.mp3' }
+          { id: 's1', name: 'Underground East Coast', path: 'seeds/Underground East Coast.wav' },
+          { id: 's2', name: 'Brightest Days', path: 'seeds/brightest days.wav' },
+          { id: 's3', name: 'Fire Brightness', path: 'seeds/fire brightness.wav' },
+          { id: 's4', name: 'Fun in the Sun', path: 'seeds/fun in the sun.wav' },
+          { id: 's5', name: 'Midnight Light Show', path: 'seeds/midnight light show .wav' },
+          { id: 's6', name: 'Quiet Glare', path: 'seeds/quiet glare.wav' },
+          { id: 's7', name: 'Sun Shining', path: 'seeds/sun shining.wav' }
         ];
       }
 
@@ -406,18 +410,20 @@
           const b = await this.fetchAndDecode(this.beatManifest[i].path);
           if (b) this.beatBuffers.push(...this.sliceAudioBuffer(b, this.beatManifest[i].name, `b${i+1}`));
         }
-        // Ingest Full-Track Seeds into buffer pools
+        
+        // Load & Slice 7 GitHub Seed Tracks
         for (let i = 0; i < this.seedManifest.length; i++) {
           const s = await this.fetchAndDecode(this.seedManifest[i].path);
           if (s) {
-            const slices = this.sliceAudioBuffer(s, this.seedManifest[i].name, `s${i+1}`);
+            const slices = this.sliceAudioBuffer(s, this.seedManifest[i].name, `s${i+1}`, 8);
             this.vocalBuffers.push(...slices);
             this.beatBuffers.push(...slices);
           }
         }
+
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = 'Engine Ready • All Seeds Active';
+        statusEl.innerText = `Engine Ready • ${this.vocalBuffers.length} Slices Active`;
       }
 
       getRandomBuffer(role) {
