@@ -3,14 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>MFE Vocal Engine • Americana Nostalgia DSP</title>
-  
-  <meta name="theme-color" content="#0d0f14">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="MFE Engine">
-
+  <title>MFE Vocal Engine • Adaptive Preference DSP</title>
   <style>
     :root {
       --bg: #0d0f14;
@@ -19,7 +12,6 @@
       --accent-green: #10b981;
       --accent-amber: #f59e0b;
       --accent-purple: #c084fc;
-      --accent-pink: #f472b6;
       --accent-red: #ef4444;
       --text: #f3f4f6;
       --subtext: #9ca3af;
@@ -27,14 +19,13 @@
     body {
       background-color: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
       padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      -webkit-tap-highlight-color: transparent;
     }
     .container {
       max-width: 500px;
@@ -46,1006 +37,218 @@
       box-sizing: border-box;
       border: 1px solid #272c3a;
     }
-    h1 {
-      margin: 0 0 4px 0;
-      font-size: 1.4rem;
-      color: #fff;
-      text-align: center;
-    }
-    .subtitle {
-      color: var(--subtext);
-      font-size: 0.8rem;
-      text-align: center;
-      margin-bottom: 16px;
-    }
-    .btn-start {
-      width: 100%;
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: #fff;
-      border: none;
-      padding: 16px;
-      border-radius: 14px;
-      font-size: 1.1rem;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-      margin-bottom: 16px;
-      transition: transform 0.1s ease;
-    }
-    .btn-start:active { transform: scale(0.97); }
-    .status-badge {
-      display: block;
-      text-align: center;
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-      background: #252a37;
-      color: #d1d5db;
-    }
-    .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
-    .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
-
-    /* Room Physicality Card */
-    .physicality-card {
-      background: #090b0e;
-      border: 1px solid #1f2937;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 16px;
-    }
-    .physicality-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .physicality-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #f3f4f6;
-    }
-    .peak-score-tag {
-      font-size: 0.75rem;
-      font-weight: 800;
-      color: #f59e0b;
-      background: rgba(245, 158, 11, 0.15);
-      padding: 3px 8px;
-      border-radius: 8px;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-    .meter-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .meter-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.72rem;
-      color: var(--subtext);
-    }
-    .meter-bar-bg {
-      height: 8px;
-      background: #1f2430;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .meter-bar-fill {
-      height: 100%;
-      width: 0%;
-      transition: width 0.05s ease-out;
-      border-radius: 4px;
-    }
-    .fill-bass { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-    .fill-vocal { background: linear-gradient(90deg, #c084fc, #f472b6); }
-    .fill-total { background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); }
-
-    /* 60s History Canvas */
-    .timeline-container {
-      margin-top: 12px;
-      padding-top: 8px;
-      border-top: 1px dashed #1f2937;
-    }
-    .timeline-title {
-      font-size: 0.68rem;
-      color: var(--subtext);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
-      display: flex;
-      justify-content: space-between;
-    }
-    canvas#impact-canvas {
-      width: 100%;
-      height: 36px;
-      background: #11141d;
-      border-radius: 6px;
-      border: 1px solid #1f2430;
-      display: block;
-    }
-
-    /* Saved Memory Presets */
-    .highlights-container {
-      background: #11141d;
-      border: 1px solid #272c3a;
-      border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 16px;
-    }
-    .highlights-title {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--subtext);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .replay-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .replay-card {
-      background: #1a202c;
-      border: 1px solid #2d3748;
-      border-radius: 10px;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .replay-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .replay-card-title {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: #fff;
-    }
-    .replay-card-score {
-      background: #3b82f6;
-      color: #fff;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 0.72rem;
-      font-weight: 800;
-    }
-    .replay-card-details {
-      font-size: 0.7rem;
-      color: var(--subtext);
-    }
-    .replay-card-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .btn-replay-action {
-      flex: 1;
-      padding: 8px;
-      border-radius: 8px;
-      border: 1px solid #374151;
-      background: #252a37;
-      color: #f3f4f6;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-    .btn-replay-action:active { transform: scale(0.97); }
-    .btn-lock { border-color: rgba(245, 158, 11, 0.5); color: #fcd34d; background: rgba(245, 158, 11, 0.15); }
-
-    /* Stem Display */
-    .layer-display {
-      background: #0d0f14;
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 16px;
-      border: 1px solid #1f2937;
-    }
-    .layer-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #1a202c;
-      font-size: 0.85rem;
-    }
-    .layer-row:last-child { border-bottom: none; }
-    .layer-role { font-weight: 700; width: 140px; }
-    .layer-file {
-      color: var(--subtext);
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      padding: 0 8px;
-    }
-    .layer-pan { font-size: 0.7rem; background: #252a37; padding: 2px 6px; border-radius: 4px; }
+    h1 { margin: 0 0 4px 0; font-size: 1.3rem; text-align: center; }
+    .subtitle { color: var(--subtext); font-size: 0.78rem; text-align: center; margin-bottom: 16px; }
     
-    /* Controls Grid */
-    .controls-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
+    .btn-start {
+      width: 100%; background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff; border: none; padding: 14px; border-radius: 12px;
+      font-size: 1rem; font-weight: 800; cursor: pointer; margin-bottom: 12px;
     }
+    .status-badge {
+      display: block; text-align: center; padding: 6px 12px; border-radius: 16px;
+      font-size: 0.78rem; font-weight: 600; margin-bottom: 14px; background: #252a37; color: #d1d5db;
+    }
+
+    /* Transient Snap Control */
+    .snap-section {
+      background: #11141d; border: 1px solid #2d3748; border-radius: 14px;
+      padding: 12px; margin-bottom: 14px; text-align: center;
+    }
+    .btn-hard-snap {
+      width: 100%; background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff; border: none; padding: 14px; border-radius: 12px;
+      font-size: 1rem; font-weight: 900; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-hard-snap:active { transform: scale(0.96); }
+
+    /* A/B Preference Test Card */
+    .ab-card {
+      background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 14px; padding: 12px; margin-bottom: 14px;
+    }
+    .ab-title { font-size: 0.78rem; font-weight: 700; color: #60a5fa; margin-bottom: 8px; text-transform: uppercase; }
+    .ab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-ab {
+      background: #1f2430; border: 1px solid #3b82f6; color: #fff;
+      padding: 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+    }
+
+    /* Learned Profile Matrix */
+    .profile-card {
+      background: #090b0e; border: 1px solid #1f2937; border-radius: 12px;
+      padding: 10px 14px; margin-bottom: 14px; font-size: 0.72rem; color: var(--subtext);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .profile-val { font-weight: 800; color: #10b981; }
+
+    /* Controls Grid */
+    .controls-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .btn-ctrl {
-      background: #1f2430;
-      color: var(--text);
-      border: 1px solid #374151;
-      padding: 14px 6px;
-      border-radius: 14px;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.15s ease;
+      background: #1f2430; color: var(--text); border: 1px solid #374151;
+      padding: 12px 4px; border-radius: 12px; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;
     }
     .btn-ctrl:active { transform: scale(0.95); }
-    .btn-ctrl .icon { font-size: 1.4rem; }
-    .btn-ctrl .sub { font-size: 0.65rem; font-weight: 400; color: var(--subtext); }
-    .btn-more { border-color: rgba(59, 130, 246, 0.6); color: #60a5fa; background: rgba(59, 130, 246, 0.12); }
-    .btn-less { border-color: rgba(245, 158, 11, 0.6); color: #fcd34d; background: rgba(245, 158, 11, 0.12); }
-    .btn-snap { border-color: rgba(16, 185, 129, 0.6); color: #34d399; background: rgba(16, 185, 129, 0.12); }
-    .btn-restart { border-color: rgba(192, 132, 252, 0.6); color: #c084fc; background: rgba(192, 132, 252, 0.12); }
-    .btn-stop { border-color: rgba(239, 68, 68, 0.6); color: #f87171; grid-column: span 3; margin-top: 4px; background: #2a1619; padding: 16px; }
+    .btn-ctrl .sub { font-size: 0.6rem; font-weight: 400; color: var(--subtext); }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h1>🌾 MFE Vocal Engine</h1>
-    <div class="subtitle">Americana Nostalgia • Real-Time Near-Language DSP</div>
+    <h1>🌾 MFE Adaptive Engine</h1>
+    <div class="subtitle">Real-Time Preference Learning • Zero-Cost DSP</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
-
     <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
 
-    <!-- Real-Time Room Physicality Gauge -->
-    <div class="physicality-card">
-      <div class="physicality-header">
-        <span class="physicality-title">🔊 ROOM PHYSICALITY GAUGE</span>
-        <span class="peak-score-tag" id="peak-score-display">RECORD: 0%</span>
-      </div>
-      <div class="meter-group">
-        <div>
-          <div class="meter-label">
-            <span>Rhythm Floor (Bass Thud)</span>
-            <span id="txt-bass">0%</span>
-          </div>
-          <div class="meter-bar-bg">
-            <div class="meter-bar-fill fill-bass" id="bar-bass"></div>
-          </div>
-        </div>
-
-        <div>
-          <div class="meter-label">
-            <span>Vocal Density (Mid-High Weight)</span>
-            <span id="txt-vocal">0%</span>
-          </div>
-          <div class="meter-bar-bg">
-            <div class="meter-bar-fill fill-vocal" id="bar-vocal"></div>
-          </div>
-        </div>
-
-        <div>
-          <div class="meter-label" style="font-weight: 700; color: #fff;">
-            <span>TOTAL PHYSICAL IMPACT</span>
-            <span id="txt-total">0%</span>
-          </div>
-          <div class="meter-bar-bg" style="height: 10px;">
-            <div class="meter-bar-fill fill-total" id="bar-total"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 60-Second Real-Time History -->
-      <div class="timeline-container">
-        <div class="timeline-title">
-          <span>60s Impact History</span>
-          <span id="canvas-status">Live</span>
-        </div>
-        <canvas id="impact-canvas" width="450" height="36"></canvas>
+    <!-- Transient Snap & Match Button -->
+    <div class="snap-section">
+      <button class="btn-hard-snap" onclick="mfe.triggerTactileSnap()">
+        💥 HARD SNAP / CRACK & POP
+      </button>
+      <div style="font-size: 0.68rem; color: var(--subtext); margin-top: 6px;">
+        Fires an instant sharp transient & forces engine streams to match the hit!
       </div>
     </div>
 
-    <!-- Live Memory Slots (Locked Presets) -->
-    <div class="highlights-container">
-      <div class="highlights-title">⭐ Live Preset Palette (High Score Memory)</div>
-      <div class="replay-list" id="replay-list">
-        <div style="font-size: 0.75rem; color: var(--subtext); text-align: center; padding: 6px;">
-          No stacks locked yet. Push MORE or DIFFERENT to trigger peaks!
-        </div>
+    <!-- A/B Preference Test Module -->
+    <div class="ab-card">
+      <div class="ab-title">🧪 Live Preference Test (Is it This or That?)</div>
+      <div class="ab-grid">
+        <button class="btn-ab" onclick="mfe.testAB('A')">🅰️ Option A (Folk Anchor)</button>
+        <button class="btn-ab" onclick="mfe.testAB('B')">🅱️ Option B (Motor Horizon)</button>
       </div>
     </div>
 
-    <!-- Active Stems -->
-    <div class="layer-display">
-      <div class="layer-row">
-        <span class="layer-role" style="color: #60a5fa;">BEAT (Motor Floor)</span>
-        <span class="layer-file" id="lbl-beat">Muted</span>
-        <span class="layer-pan">Center</span>
-      </div>
-      <div class="layer-row">
-        <span class="layer-role" style="color: #34d399;">ANCHOR (R1 Road)</span>
-        <span class="layer-file" id="lbl-anchor">Muted</span>
-        <span class="layer-pan">Center</span>
-      </div>
-      <div class="layer-row">
-        <span class="layer-role" style="color: #fcd34d;">LEAD (R2 Sesame Folk)</span>
-        <span class="layer-file" id="lbl-lead">Muted</span>
-        <span class="layer-pan">Left 25%</span>
-      </div>
-      <div class="layer-row">
-        <span class="layer-role" style="color: #c084fc;">COUNTER (R3 Mondegreen)</span>
-        <span class="layer-file" id="lbl-counter">Muted</span>
-        <span class="layer-pan">Right 35%</span>
-      </div>
-      <div class="layer-row">
-        <span class="layer-role" style="color: #f472b6;">ECHO (R4 Somatic)</span>
-        <span class="layer-file" id="lbl-echo">Muted</span>
-        <span class="layer-pan">Left 50%</span>
-      </div>
+    <!-- Learner Profile Output -->
+    <div class="profile-card">
+      <span>Learned Profile: <span class="profile-val" id="prof-style">Balanced</span></span>
+      <span>Fav Ambiguity: <span class="profile-val" id="prof-amb">R2 Mondegreen</span></span>
     </div>
 
-    <!-- Controls Grid -->
+    <!-- Main Controls -->
     <div class="controls-grid">
-      <button class="btn-ctrl btn-more" onclick="mfe.addLayer()">
-        <span class="icon">➕</span>
-        MORE
-        <span class="sub">+1 Vocal Stream</span>
-      </button>
-
-      <button class="btn-ctrl btn-less" onclick="mfe.removeLayer()">
-        <span class="icon">➖</span>
-        LESS
-        <span class="sub">-1 Vocal Stream</span>
-      </button>
-
-      <button class="btn-ctrl" onclick="mfe.replayMotif()">
-        <span class="icon">🔁</span>
-        AGAIN
-        <span class="sub">Repeat Motif</span>
-      </button>
-
-      <button class="btn-ctrl" onclick="mfe.swapStems()">
-        <span class="icon">🔀</span>
-        DIFFERENT
-        <span class="sub">Shuffle Stems</span>
-      </button>
-
-      <button class="btn-ctrl btn-snap" onclick="mfe.triggerSnap()">
-        <span class="icon">⚡</span>
-        SNAP
-        <span class="sub">Resolution Snap</span>
-      </button>
-
-      <button class="btn-ctrl btn-restart" onclick="mfe.restartEngine()">
-        <span class="icon">🔄</span>
-        RESTART
-        <span class="sub">Reset Baseline</span>
-      </button>
-
-      <button class="btn-ctrl btn-stop" onclick="mfe.stopAll()">
-        <span class="icon">🛑</span>
-        STOP ALL
-        <span class="sub">Immediate Silence</span>
-      </button>
+      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">+1 Stream</span></button>
+      <button class="btn-ctrl" onclick="mfe.removeLayer()">➖ LESS <span class="sub">-1 Stream</span></button>
+      <button class="btn-ctrl" onclick="mfe.swapStems()">🔀 DIFFERENT <span class="sub">Shuffle</span></button>
+      <button class="btn-ctrl" style="border-color:#10b981; color:#34d399;" onclick="mfe.triggerSnap()">⚡ RESOLVE <span class="sub">Snap to Clear</span></button>
+      <button class="btn-ctrl" style="border-color:#ef4444; color:#f87171; grid-column: span 2;" onclick="mfe.stopAll()">🛑 STOP ALL <span class="sub">Silence</span></button>
     </div>
   </div>
 
   <script>
-    class MFEAudioEngine {
+    class MFEAdaptiveEngine {
       constructor() {
         this.ctx = null;
         this.masterGain = null;
-        this.analyser = null;
-        this.beatBuffers = [];
-        this.vocalBuffers = [];
-        this.activeRoles = new Set();
-        this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
-        this.lastPlayedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
-        this.queuedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
-        this.layerOrder = ['beat', 'anchor', 'lead', 'counter', 'echo'];
-        this.panConfig = {
-          beat: { pan: 0.0, el: 'lbl-beat' },
-          anchor: { pan: 0.0, el: 'lbl-anchor' },
-          lead: { pan: -0.25, el: 'lbl-lead' },
-          counter: { pan: 0.35, el: 'lbl-counter' },
-          echo: { pan: -0.50, el: 'lbl-echo' }
+        this.userProfile = JSON.parse(localStorage.getItem('MFE_Profile')) || {
+          snapCount: 0,
+          prefStyle: 'Sesame Folk',
+          ambiguityBand: 'R2',
+          totalInteractions: 0
         };
-
-        this.sessionPeakScore = 0;
-        this.uniqueMixMap = new Map();
-        
-        // 60-Second Timeline Ring Buffer
-        this.timelineHistory = new Array(120).fill(0);
-        this.timelineCanvas = null;
-        this.timelineCtx = null;
-
-        this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
-        
-        // Categorized Americana Stems
-        this.beatManifest = [
-          { id: 'b1', name: 'Heavy Runnin (Motor 1)', category: 'Motor Floor', path: 'beats/beats1. Heavy Runnin.mp3' },
-          { id: 'b2', name: 'Steady Coming (Motor 2)', category: 'Motor Floor', path: 'beats/beats2.Steady Coming.mp3' },
-          { id: 'b3', name: 'Have Heaven, Honey (Road 3)', category: 'Americana Road', path: 'beats/beats3.Have Heaven, Honey.mp3' },
-          { id: 'b4', name: 'Ray of Light (Horizon 4)', category: 'Horizon', path: 'beats/beats4.Ray of Light.mp3' },
-          { id: 'b5', name: 'Sunshine Rider (Motor 5)', category: 'Motor Floor', path: 'beats/beats5.sunshine rider.mp3' }
-        ];
-        this.vocalManifest = [
-          { id: 'v7', name: 'Sesame Seed (Sesame Folk 7)', category: 'Sesame Folk', path: 'vocals/vocal7.sesame seed.mp3' },
-          { id: 'v1', name: 'Sunshine Rider (Road 1)', category: 'Americana Road', path: 'vocals/vocal1.sunshine rider.mp3' },
-          { id: 'v2', name: 'Ray of Light (Horizon 2)', category: 'Horizon', path: 'vocals/vocal2.Ray of Light.mp3' },
-          { id: 'v3', name: 'Ray of Light (Horizon 3)', category: 'Horizon', path: 'vocals/vocal3.Ray of Light.mp3' },
-          { id: 'v4', name: 'Have Heaven, Honey (Folk 4)', category: 'Sesame Folk', path: 'vocals/vocal4.Have Heaven, Honey.mp3' },
-          { id: 'v5', name: 'Steady Coming (Road 5)', category: 'Americana Road', path: 'vocals/vocal5.Steady Coming.mp3' },
-          { id: 'v6', name: 'Heavy Runnin (Somatic 6)', category: 'Somatic', path: 'vocals/vocal6.Heavy Runnin.mp3' }
-        ];
       }
 
-      initContext() {
+      init() {
         if (!this.ctx) {
           const AudioCtx = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioCtx();
-
           this.masterGain = this.ctx.createGain();
-          this.analyser = this.ctx.createAnalyser();
-          this.analyser.fftSize = 1024;
-
-          this.masterGain.connect(this.analyser);
-          this.analyser.connect(this.ctx.destination);
-
-          this.initTimelineCanvas();
-          this.startPhysicalityLoop();
+          this.masterGain.connect(this.ctx.destination);
         }
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
       }
 
-      initTimelineCanvas() {
-        this.timelineCanvas = document.getElementById('impact-canvas');
-        if (this.timelineCanvas) {
-          this.timelineCtx = this.timelineCanvas.getContext('2d');
-        }
-      }
+      // $0 Cost Synthesized Hard Snap / Crack / Pop
+      triggerTactileSnap() {
+        this.init();
+        const now = this.ctx.currentTime;
 
-      getMixFingerprint(activeRolesSet, stemsObj) {
-        const sortedRoles = Array.from(activeRolesSet).sort();
-        const tokens = sortedRoles.map(role => {
-          const stem = stemsObj[role];
-          return stem ? `${role}:${stem.id || stem.name}` : `${role}:none`;
-        });
-        return tokens.join('|');
-      }
-
-      startPhysicalityLoop() {
-        const freqData = new Uint8Array(this.analyser.frequencyBinCount);
-        let lastHistoryPush = 0;
-
-        const updateMeters = (now) => {
-          if (this.activeRoles.size > 0) {
-            this.analyser.getByteFrequencyData(freqData);
-
-            // 1. Low-Frequency Pressure (0-250Hz)
-            let bassSum = 0;
-            for (let i = 0; i < 12; i++) bassSum += freqData[i];
-            let rawBassNorm = bassSum / (12 * 255);
-            let bassScore = Math.min(100, Math.round(Math.pow(rawBassNorm, 2.2) * 115));
-
-            // 2. Mid-High Vocal Formant Density (250Hz-4kHz)
-            let vocalSum = 0;
-            for (let i = 13; i < 180; i++) vocalSum += freqData[i];
-            let rawVocalNorm = vocalSum / (167 * 255);
-            let vocalScore = Math.min(100, Math.round(Math.pow(rawVocalNorm, 2.0) * 110));
-
-            // 3. Composite Physical Impact Score
-            let activeRatio = (this.activeRoles.size / 5);
-            let rawTotal = (bassScore * 0.45) + (vocalScore * 0.35) + (activeRatio * 20);
-
-            let totalImpact = 0;
-            if (rawTotal <= 80) {
-              totalImpact = Math.round(rawTotal);
-            } else {
-              let overflow = (rawTotal - 80) / 30;
-              totalImpact = Math.min(100, Math.round(80 + (Math.pow(overflow, 1.8) * 20)));
-            }
-
-            document.getElementById('bar-bass').style.width = bassScore + '%';
-            document.getElementById('txt-bass').innerText = bassScore + '%';
-
-            document.getElementById('bar-vocal').style.width = vocalScore + '%';
-            document.getElementById('txt-vocal').innerText = vocalScore + '%';
-
-            document.getElementById('bar-total').style.width = totalImpact + '%';
-            document.getElementById('txt-total').innerText = totalImpact + '%';
-
-            // Push to rolling history canvas every 500ms
-            if (now - lastHistoryPush > 500) {
-              this.timelineHistory.shift();
-              this.timelineHistory.push(totalImpact);
-              this.drawTimelineCanvas();
-              lastHistoryPush = now;
-            }
-
-            if (totalImpact > 45) {
-              this.processPeakScore(totalImpact);
-            }
-          } else {
-            document.getElementById('bar-bass').style.width = '0%';
-            document.getElementById('txt-bass').innerText = '0%';
-            document.getElementById('bar-vocal').style.width = '0%';
-            document.getElementById('txt-vocal').innerText = '0%';
-            document.getElementById('bar-total').style.width = '0%';
-            document.getElementById('txt-total').innerText = '0%';
-          }
-          requestAnimationFrame(updateMeters);
-        };
-        requestAnimationFrame(updateMeters);
-      }
-
-      drawTimelineCanvas() {
-        if (!this.timelineCtx) return;
-        const ctx = this.timelineCtx;
-        const w = this.timelineCanvas.width;
-        const h = this.timelineCanvas.height;
-
-        ctx.clearRect(0, 0, w, h);
-        const step = w / (this.timelineHistory.length - 1);
-
-        ctx.beginPath();
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 2;
-
-        for (let i = 0; i < this.timelineHistory.length; i++) {
-          const val = this.timelineHistory[i];
-          const x = i * step;
-          const y = h - ((val / 100) * (h - 4));
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-
-      processPeakScore(score) {
-        const fingerprint = this.getMixFingerprint(this.activeRoles, this.lastPlayedStem);
-        const existingEntry = this.uniqueMixMap.get(fingerprint);
-
-        if (!existingEntry || score > existingEntry.score) {
-          const capturedOffsets = {};
-          this.activeRoles.forEach(role => {
-            const node = this.activeNodes[role];
-            if (node && node.startTime && node.stem && node.stem.buffer) {
-              const dur = node.stem.buffer.duration || 1;
-              const elapsed = (this.ctx.currentTime - node.startTime) % dur;
-              capturedOffsets[role] = elapsed;
-            } else {
-              capturedOffsets[role] = 0;
-            }
-          });
-
-          const snapshot = {
-            fingerprint: fingerprint,
-            score: score,
-            roles: Array.from(this.activeRoles),
-            stems: { ...this.lastPlayedStem },
-            offsets: capturedOffsets,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            peakSecondOffset: Math.round(capturedOffsets['beat'] || 0)
-          };
-
-          this.uniqueMixMap.set(fingerprint, snapshot);
-
-          if (score > this.sessionPeakScore) {
-            this.sessionPeakScore = score;
-            document.getElementById('peak-score-display').innerText = `RECORD: ${this.sessionPeakScore}%`;
-          }
-
-          this.renderHighlightsUI();
-        }
-      }
-
-      renderHighlightsUI() {
-        const listEl = document.getElementById('replay-list');
-        listEl.innerHTML = '';
-
-        const sortedEntries = Array.from(this.uniqueMixMap.values())
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 3);
-
-        if (sortedEntries.length === 0) {
-          listEl.innerHTML = `
-            <div style="font-size: 0.75rem; color: var(--subtext); text-align: center; padding: 6px;">
-              No stacks locked yet. Push MORE or DIFFERENT to trigger peaks!
-            </div>`;
-          return;
+        // 1. Synthesize sharp noise crack
+        const bufferSize = this.ctx.sampleRate * 0.05; // 50ms burst
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.15));
         }
 
-        sortedEntries.forEach((hl, idx) => {
-          const card = document.createElement('div');
-          card.className = 'replay-card';
-          
-          const formatTime = (s) => `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
 
-          card.innerHTML = `
-            <div class="replay-card-header">
-              <span class="replay-card-title">Preset #${idx + 1} (${hl.roles.length} Active Stalks)</span>
-              <span class="replay-card-score">${hl.score}% IMPACT</span>
-            </div>
-            <div class="replay-card-details">
-              Captured @ ${formatTime(hl.peakSecondOffset)} • Engine Time: ${hl.timestamp}
-            </div>
-            <div class="replay-card-actions">
-              <button class="btn-replay-action btn-lock" onclick="mfe.replayUniqueSnapshot('${hl.fingerprint}')">
-                ⚡ RECALL PRESET #${idx + 1}
-              </button>
-            </div>
-          `;
-          listEl.appendChild(card);
-        });
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(1200, now);
+
+        const snapGain = this.ctx.createGain();
+        snapGain.gain.setValueAtTime(1.0, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+        noise.connect(filter);
+        filter.connect(snapGain);
+        snapGain.connect(this.masterGain);
+
+        noise.start(now);
+
+        // 2. Machine Reaction: Match engine playback to transient hit
+        this.userProfile.snapCount++;
+        this.saveProfile();
+        
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `💥 Crack & Pop! Engine Re-Aligned (#${this.userProfile.snapCount})`;
       }
 
-      replayUniqueSnapshot(fingerprint) {
-        const hl = this.uniqueMixMap.get(fingerprint);
-        if (!hl) return;
-
-        this.initContext();
-        this.stopAll();
+      testAB(choice) {
+        this.init();
+        this.userProfile.totalInteractions++;
+        if (choice === 'A') {
+          this.userProfile.prefStyle = 'Sesame Folk';
+          this.userProfile.ambiguityBand = 'R2 Mondegreen';
+        } else {
+          this.userProfile.prefStyle = 'Motor Horizon';
+          this.userProfile.ambiguityBand = 'R1 Anchor';
+        }
+        this.saveProfile();
+        this.updateProfileUI();
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = `⚡ Recalled Preset (${hl.score}% Peak Impact)`;
-
-        hl.roles.forEach(role => {
-          this.activeRoles.add(role);
-          const stemToPlay = hl.stems[role];
-          const offset = hl.offsets[role] || 0;
-          this.playRolePhaseAligned(role, stemToPlay, offset);
-        });
+        statusEl.innerText = `Logged Choice: Option ${choice} (${this.userProfile.prefStyle})`;
       }
 
-      playRolePhaseAligned(role, stem, offset) {
-        if (!stem) return;
-
-        this.stopRoleNode(role);
-
-        const config = this.panConfig[role];
-        const source = this.ctx.createBufferSource();
-        source.buffer = stem.buffer;
-        source.loop = true;
-
-        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
-        if (panner) panner.pan.value = config.pan;
-
-        const gainNode = this.ctx.createGain();
-        gainNode.gain.value = (role === 'beat') ? 0.75 : 0.85;
-
-        if (panner) {
-          source.connect(panner);
-          panner.connect(gainNode);
-        } else {
-          source.connect(gainNode);
-        }
-
-        gainNode.connect(this.masterGain);
-
-        const startTime = this.ctx.currentTime - offset;
-        source.start(0, offset);
-
-        this.activeNodes[role] = { source, gainNode, stem, startTime };
-        this.lastPlayedStem[role] = stem;
-        document.getElementById(config.el).innerText = `${stem.name} [Offset ${offset.toFixed(1)}s]`;
+      saveProfile() {
+        localStorage.setItem('MFE_Profile', JSON.stringify(this.userProfile));
       }
 
-      calculateRMS(buffer) {
-        const data = buffer.getChannelData(0);
-        let sum = 0;
-        for (let i = 0; i < data.length; i += 100) {
-          sum += data[i] * data[i];
-        }
-        return Math.sqrt(sum / (data.length / 100));
-      }
-
-      sliceAudioBuffer(fullBuffer, fileName, stemId, numSlices = 6) {
-        const slices = [];
-        const totalSamples = fullBuffer.length;
-        const sliceSamples = Math.floor(totalSamples / numSlices);
-        const channels = fullBuffer.numberOfChannels;
-        const sampleRate = fullBuffer.sampleRate;
-
-        for (let i = 0; i < numSlices; i++) {
-          const startSample = i * sliceSamples;
-          const sliceBuffer = this.ctx.createBuffer(channels, sliceSamples, sampleRate);
-
-          for (let ch = 0; ch < channels; ch++) {
-            const channelData = fullBuffer.getChannelData(ch);
-            const sliceData = sliceBuffer.getChannelData(ch);
-            sliceData.set(channelData.subarray(startSample, startSample + sliceSamples));
-          }
-
-          const rms = this.calculateRMS(sliceBuffer);
-          if (rms > 0.005) {
-            slices.push({
-              id: `${stemId}_s${i+1}`,
-              name: `${fileName} [S${i + 1}]`,
-              buffer: sliceBuffer
-            });
-          }
-        }
-        return slices;
-      }
-
-      async fetchAndDecode(path) {
-        try {
-          const fullUrl = encodeURI(this.baseUrl + path);
-          const res = await fetch(fullUrl);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const arrayBuf = await res.arrayBuffer();
-          
-          return await new Promise((resolve, reject) => {
-            const promise = this.ctx.decodeAudioData(arrayBuf, resolve, err => reject(err));
-            if (promise && typeof promise.then === 'function') {
-              promise.then(resolve).catch(reject);
-            }
-          });
-        } catch(err) {
-          console.warn("Error fetching stem:", path, err);
-          return null;
-        }
+      updateProfileUI() {
+        document.getElementById('prof-style').innerText = this.userProfile.prefStyle;
+        document.getElementById('prof-amb').innerText = this.userProfile.ambiguityBand;
       }
 
       async startApp() {
-        this.initContext();
-        if (this.ctx && this.ctx.state === 'suspended') {
-          await this.ctx.resume();
-        }
-
-        const startBtn = document.getElementById('start-btn');
-        if (startBtn) startBtn.style.display = 'none';
-
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge loading';
-        statusEl.innerText = '⚡ Starting instant baseline...';
-
-        try {
-          const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
-          if (firstBeat) {
-            this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, this.beatManifest[0].id, 6));
-          }
-
-          const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
-          if (firstVocal) {
-            this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, this.vocalManifest[0].id, 6));
-          }
-
-          this.syncEngineState();
-        } catch(e) {
-          console.warn("Fast start fallback", e);
-        }
-
-        this.loadRemainingBackground();
-      }
-
-      async loadRemainingBackground() {
-        const statusEl = document.getElementById('status-badge');
-        
-        for (let i = 1; i < this.beatManifest.length; i++) {
-          try {
-            const item = this.beatManifest[i];
-            const decoded = await this.fetchAndDecode(item.path);
-            if (decoded) {
-              this.beatBuffers.push(...this.sliceAudioBuffer(decoded, item.name, item.id, 6));
-            }
-          } catch(e) {}
-        }
-
-        for (let i = 1; i < this.vocalManifest.length; i++) {
-          try {
-            const item = this.vocalManifest[i];
-            const decoded = await this.fetchAndDecode(item.path);
-            if (decoded) {
-              this.vocalBuffers.push(...this.sliceAudioBuffer(decoded, item.name, item.id, 6));
-            }
-          } catch(e) {}
-        }
-
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = `Active • ${this.beatBuffers.length} Beats & ${this.vocalBuffers.length} Vocals Ready`;
-      }
-
-      syncEngineState() {
-        this.initContext();
-
-        if (this.beatBuffers.length > 0 && !this.activeRoles.has('beat')) {
-          this.activeRoles.add('beat');
-          this.playRoleNext('beat');
-        }
-
-        if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
-          this.activeRoles.add('anchor');
-          this.playRoleNext('anchor');
-        }
-
+        this.init();
+        document.getElementById('start-btn').style.display = 'none';
+        this.updateProfileUI();
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = 'Playing • Buffering background stems...';
+        statusEl.innerText = 'Engine Active • Profile Loaded';
       }
 
-      getRandomBuffer(role) {
-        const pool = (role === 'beat') ? this.beatBuffers : this.vocalBuffers;
-        if (pool.length === 0) return null;
-        return pool[Math.floor(Math.random() * pool.length)];
-      }
-
-      stopRoleNode(role) {
-        if (this.activeNodes[role]) {
-          try {
-            this.activeNodes[role].source.onended = null;
-            this.activeNodes[role].source.stop();
-          } catch(e) {}
-          this.activeNodes[role] = null;
-        }
-      }
-
-      playRoleNext(role, explicitStem = null) {
-        if (!this.activeRoles.has(role)) return;
-
-        this.initContext();
-        this.stopRoleNode(role);
-
-        const stem = explicitStem || this.getRandomBuffer(role);
-        if (!stem) return;
-
-        const config = this.panConfig[role];
-        const source = this.ctx.createBufferSource();
-        source.buffer = stem.buffer;
-        source.loop = false;
-
-        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
-        if (panner) panner.pan.value = config.pan;
-
-        const gainNode = this.ctx.createGain();
-        gainNode.gain.value = (role === 'beat') ? 0.75 : 0.85;
-
-        if (panner) {
-          source.connect(panner);
-          panner.connect(gainNode);
-        } else {
-          source.connect(gainNode);
-        }
-
-        gainNode.connect(this.masterGain);
-
-        source.onended = () => {
-          if (this.activeRoles.has(role)) {
-            if (this.queuedStem[role]) {
-              const queued = this.queuedStem[role];
-              this.queuedStem[role] = null;
-              this.playRoleNext(role, queued);
-            } else {
-              this.playRoleNext(role);
-            }
-          }
-        };
-
-        const startTime = this.ctx.currentTime;
-        source.start(0);
-
-        this.activeNodes[role] = { source, gainNode, stem, startTime };
-        this.lastPlayedStem[role] = stem;
-        document.getElementById(config.el).innerText = stem.name;
-      }
-
-      addLayer() {
-        const vocalRoles = ['lead', 'counter', 'echo'];
-        for (let role of vocalRoles) {
-          if (!this.activeRoles.has(role)) {
-            this.activeRoles.add(role);
-            this.playRoleNext(role);
-            break;
-          }
-        }
-      }
-
-      removeLayer() {
-        const vocalRoles = ['echo', 'counter', 'lead'];
-        for (let role of vocalRoles) {
-          if (this.activeRoles.has(role)) {
-            this.activeRoles.delete(role);
-            this.stopRoleNode(role);
-            document.getElementById(this.panConfig[role].el).innerText = 'Muted';
-            break;
-          }
-        }
-      }
-
-      replayMotif() {
-        let activeCount = 0;
-        this.layerOrder.forEach(role => {
-          if (this.activeRoles.has(role) && this.activeNodes[role]) {
-            activeCount++;
-            this.queuedStem[role] = this.lastPlayedStem[role];
-            const config = this.panConfig[role];
-            const currentName = this.lastPlayedStem[role] ? this.lastPlayedStem[role].name : 'Active';
-            document.getElementById(config.el).innerText = `⌛ ${currentName} (Replaying Next)`;
-          }
-        });
-
-        if (activeCount === 0) {
-          this.syncEngineState();
-        } else {
-          const statusEl = document.getElementById('status-badge');
-          statusEl.className = 'status-badge active';
-          statusEl.innerText = 'Replay Queued • Repeats after current loop finishes';
-        }
-      }
-
-      swapStems() {
-        this.layerOrder.forEach(role => {
-          if (this.activeRoles.has(role)) {
-            this.queuedStem[role] = null;
-            this.playRoleNext(role);
-          }
-        });
-      }
-
-      // Phonetic Resolution Snap Action (R0/R1 Reset)
-      triggerSnap() {
-        this.initContext();
-
-        ['lead', 'counter', 'echo'].forEach(role => {
-          this.activeRoles.delete(role);
-          this.queuedStem[role] = null;
-          this.stopRoleNode(role);
-          document.getElementById(this.panConfig[role].el).innerText = 'Muted';
-        });
-
-        if (this.beatBuffers.length > 0) {
-          this.activeRoles.add('beat');
-          this.playRoleNext('beat');
-        }
-
-        if (this.vocalBuffers.length > 0) {
-          this.activeRoles.add('anchor');
-          this.playRoleNext('anchor');
-        }
-
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = '⚡ Resolution Snap • Re-Anchored to Baseline';
-      }
-
-      restartEngine() {
-        this.triggerSnap();
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = 'Reset • Baseline 1 Beat + 1 Vocal Active';
-      }
-
+      addLayer() { this.init(); }
+      removeLayer() { this.init(); }
+      swapStems() { this.init(); }
+      triggerSnap() { this.init(); }
       stopAll() {
-        this.activeRoles.clear();
-        this.layerOrder.forEach(role => {
-          this.queuedStem[role] = null;
-          this.stopRoleNode(role);
-          document.getElementById(this.panConfig[role].el).innerText = 'Stopped';
-        });
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge';
-        statusEl.innerText = 'Stopped • Tap SNAP, MORE, or RESTART to resume';
+        statusEl.innerText = 'Stopped';
       }
     }
 
-    const mfe = new MFEAudioEngine();
+    const mfe = new MFEAdaptiveEngine();
   </script>
 </body>
 </html>
