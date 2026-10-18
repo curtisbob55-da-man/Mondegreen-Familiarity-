@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>MFE Vocal Engine • Seed & Polyphonic DSP</title>
+  <title>MFE Vocal Engine • Controlled Polyphony DSP</title>
   <style>
     :root {
       --bg: #0d0f14;
@@ -129,7 +129,7 @@
 
   <div class="container">
     <h1>🌾 MFE Adaptive Engine</h1>
-    <div class="subtitle">Full-Track Seeds • Real-Time Polyphonic DSP</div>
+    <div class="subtitle">Clean Polyphonic Vocal DSP • Anti-Clashing Engine</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
     <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
@@ -158,15 +158,15 @@
     </div>
 
     <div class="layer-display">
-      <div class="layer-row"><span style="color:#60a5fa; font-weight:700;">BEAT</span><span id="lbl-beat" style="color:var(--subtext);">Muted</span></div>
-      <div class="layer-row"><span style="color:#34d399; font-weight:700;">ANCHOR</span><span id="lbl-anchor" style="color:var(--subtext);">Muted</span></div>
-      <div class="layer-row"><span style="color:#fcd34d; font-weight:700;">LEAD</span><span id="lbl-lead" style="color:var(--subtext);">Muted</span></div>
-      <div class="layer-row"><span style="color:#c084fc; font-weight:700;">COUNTER</span><span id="lbl-counter" style="color:var(--subtext);">Muted</span></div>
-      <div class="layer-row"><span style="color:#f472b6; font-weight:700;">ECHO</span><span id="lbl-echo" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#60a5fa; font-weight:700;">BEAT / SEED BED</span><span id="lbl-beat" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#34d399; font-weight:700;">ANCHOR (VOCAL)</span><span id="lbl-anchor" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#fcd34d; font-weight:700;">LEAD (VOCAL)</span><span id="lbl-lead" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#c084fc; font-weight:700;">COUNTER (VOCAL)</span><span id="lbl-counter" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#f472b6; font-weight:700;">ECHO (VOCAL)</span><span id="lbl-echo" style="color:var(--subtext);">Muted</span></div>
     </div>
 
     <div class="controls-grid">
-      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">+1 Stream</span></button>
+      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">+1 Vocal Stream</span></button>
       <button class="btn-ctrl" onclick="mfe.removeLayer()">➖ LESS <span class="sub">-1 Stream</span></button>
       <button class="btn-ctrl" onclick="mfe.swapStems()">🔀 DIFFERENT <span class="sub">Shuffle Once</span></button>
     </div>
@@ -186,6 +186,7 @@
         this.analyser = null;
         this.beatBuffers = [];
         this.vocalBuffers = [];
+        this.seedBuffers = []; // Isolated full-track seed pool
         this.activeRoles = new Set();
         this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
         this.layerOrder = ['anchor', 'lead', 'counter', 'echo'];
@@ -199,7 +200,6 @@
 
         this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
         
-        // Base stem manifests
         this.beatManifest = [
           { id: 'b1', name: 'Heavy Runnin (Motor 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
           { id: 'b2', name: 'Steady Coming (Motor 2)', path: 'beats/beats2.Steady Coming.mp3' },
@@ -212,7 +212,6 @@
           { id: 'v4', name: 'Have Heaven, Honey (Folk 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' }
         ];
 
-        // Configured from your GitHub /seeds/ folder
         this.seedManifest = [
           { id: 's1', name: 'Underground East Coast', path: 'seeds/Underground East Coast.wav' },
           { id: 's2', name: 'Brightest Days', path: 'seeds/brightest days.wav' },
@@ -411,24 +410,30 @@
           if (b) this.beatBuffers.push(...this.sliceAudioBuffer(b, this.beatManifest[i].name, `b${i+1}`));
         }
         
-        // Load & Slice 7 GitHub Seed Tracks
+        // Load Full-Track Seeds strictly into isolated seedBuffers pool
         for (let i = 0; i < this.seedManifest.length; i++) {
           const s = await this.fetchAndDecode(this.seedManifest[i].path);
           if (s) {
             const slices = this.sliceAudioBuffer(s, this.seedManifest[i].name, `s${i+1}`, 8);
-            this.vocalBuffers.push(...slices);
-            this.beatBuffers.push(...slices);
+            this.seedBuffers.push(...slices);
           }
         }
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = `Engine Ready • ${this.vocalBuffers.length} Slices Active`;
+        statusEl.innerText = `Engine Ready • ${this.vocalBuffers.length} Vocal & ${this.seedBuffers.length} Seed Slices`;
       }
 
+      // CRITICAL NO-CLASH RULE: Beats/Seeds only occupy BEAT layer; Vocals occupy ANCHOR/LEAD/COUNTER/ECHO
       getRandomBuffer(role) {
-        const pool = (role === 'beat') ? this.beatBuffers : this.vocalBuffers;
-        return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
+        if (role === 'beat') {
+          // BEAT layer can play either a Beat stem or a Seed Bed track (Single instrumental floor)
+          const combinePool = [...this.beatBuffers, ...this.seedBuffers];
+          return combinePool.length > 0 ? combinePool[Math.floor(Math.random() * combinePool.length)] : null;
+        } else {
+          // Vocal roles STRICTLY draw from pure isolated vocal buffers to prevent instrumental clashing
+          return this.vocalBuffers.length > 0 ? this.vocalBuffers[Math.floor(Math.random() * this.vocalBuffers.length)] : null;
+        }
       }
 
       stopRoleNode(role) {
