@@ -21,12 +21,13 @@
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
-      padding: 16px;
+      padding: 16px 16px 90px 16px; /* Bottom padding for sticky stop bar */
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
       -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
     }
     .container {
       max-width: 500px;
@@ -67,7 +68,6 @@
       font-size: 1rem; font-weight: 900; cursor: pointer;
       box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: transform 0.05s ease;
     }
     .btn-hard-snap:active { transform: scale(0.95); }
 
@@ -93,7 +93,6 @@
       background: #1f2430; border: 1px solid #3b82f6; color: #fff;
       padding: 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
     }
-    .btn-ab:active { transform: scale(0.96); }
 
     /* Learned Profile Matrix */
     .profile-card {
@@ -111,7 +110,7 @@
     .layer-row:last-child { border-bottom: none; }
 
     /* Controls Grid */
-    .controls-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .controls-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .btn-ctrl {
       background: #1f2430; color: var(--text); border: 1px solid #374151;
       padding: 12px 4px; border-radius: 12px; font-size: 0.85rem; font-weight: 700;
@@ -119,6 +118,31 @@
     }
     .btn-ctrl:active { transform: scale(0.95); }
     .btn-ctrl .sub { font-size: 0.62rem; font-weight: 400; color: var(--subtext); }
+
+    /* Sticky Floating Stop Bar */
+    .sticky-stop-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(13, 15, 20, 0.92);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid #272c3a;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .btn-sticky-stop {
+      max-width: 500px;
+      width: 100%;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff; border: none; padding: 14px; border-radius: 12px;
+      font-size: 1rem; font-weight: 900; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5);
+      display: flex; justify-content: center; align-items: center; gap: 8px;
+    }
+    .btn-sticky-stop:active { transform: scale(0.96); }
   </style>
 </head>
 <body>
@@ -136,7 +160,7 @@
         💥 HARD SNAP / CRACK & POP
       </button>
       <div style="font-size: 0.68rem; color: var(--subtext); margin-top: 6px;">
-        Generates immediate physical noise & schedules automated rhythmic resolution!
+        Fires an instant impact transient + guaranteed rhythmic explosion riff!
       </div>
     </div>
 
@@ -174,12 +198,18 @@
 
     <!-- Main Controls -->
     <div class="controls-grid">
-      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">+1 Stream</span></button>
+      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">+1 Vocals First</span></button>
       <button class="btn-ctrl" onclick="mfe.removeLayer()">➖ LESS <span class="sub">-1 Stream</span></button>
-      <button class="btn-ctrl" onclick="mfe.swapStems()">🔀 DIFFERENT <span class="sub">Shuffle</span></button>
-      <button class="btn-ctrl" style="border-color:#10b981; color:#34d399;" onclick="mfe.triggerSnap()">⚡ RESOLVE <span class="sub">Snap to Clear</span></button>
-      <button class="btn-ctrl" style="border-color:#ef4444; color:#f87171; grid-column: span 2;" onclick="mfe.stopAll()">🛑 STOP ALL <span class="sub">Silence</span></button>
+      <button class="btn-ctrl" onclick="mfe.swapStems()">🔀 DIFFERENT <span class="sub">Shuffle Once</span></button>
+      <button class="btn-ctrl" style="border-color:#10b981; color:#34d399;" onclick="mfe.triggerSnap()">⚡ SNAP <span class="sub">Align & Add Beats</span></button>
     </div>
+  </div>
+
+  <!-- Sticky Viewport Stop Bar -->
+  <div class="sticky-stop-bar">
+    <button class="btn-sticky-stop" onclick="mfe.stopAll()">
+      🛑 STOP ALL (Silence)
+    </button>
   </div>
 
   <script>
@@ -192,8 +222,7 @@
         this.vocalBuffers = [];
         this.activeRoles = new Set();
         this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
-        this.lastPlayedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
-        this.layerOrder = ['beat', 'anchor', 'lead', 'counter', 'echo'];
+        this.layerOrder = ['anchor', 'lead', 'counter', 'echo']; // Vocals first, beat optional
         this.panConfig = {
           beat: { pan: 0.0, el: 'lbl-beat' },
           anchor: { pan: 0.0, el: 'lbl-anchor' },
@@ -269,27 +298,26 @@
         requestAnimationFrame(updateMeters);
       }
 
-      // 💥 Dynamic Physical Snap Synthesis & Machine Matching
+      // 💥 Dynamic Physical Snap Synthesis + Guaranteed Musical Explosion
       triggerTactileSnap() {
         this.initContext();
         const now = this.ctx.currentTime;
 
-        // 1. Synthesize a UNIQUE physical impact transient every time
-        const snapType = Math.floor(Math.random() * 3); // 0: Wood crack, 1: Sub thud, 2: Metallic pop
-        const dur = 0.04 + (Math.random() * 0.04);
+        // 1. Synthesize physical transient impact
+        const dur = 0.05 + (Math.random() * 0.03);
         const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * dur, this.ctx.sampleRate);
         const data = buf.getChannelData(0);
 
         for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.2));
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.18));
         }
 
         const noise = this.ctx.createBufferSource();
         noise.buffer = buf;
 
         const filter = this.ctx.createBiquadFilter();
-        filter.type = snapType === 1 ? 'lowpass' : 'highpass';
-        filter.frequency.setValueAtTime(snapType === 1 ? 180 + Math.random() * 100 : 1200 + Math.random() * 1500, now);
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(1000 + Math.random() * 1500, now);
 
         const gain = this.ctx.createGain();
         gain.gain.setValueAtTime(1.0, now);
@@ -301,20 +329,27 @@
 
         noise.start(now);
 
-        // 2. Scheduled Machine Integration (Rhythmic Snap)
+        // 2. Guaranteed Musical Explosion: Force Beat stem + Add new vocal stream + Sync snap
         this.userProfile.snapCount++;
         this.saveProfile();
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge loading';
-        const delayMs = Math.floor(180 + Math.random() * 120);
-        statusEl.innerText = `💥 Crack! Machine Re-Aligning in ${delayMs}ms...`;
+        statusEl.innerText = `💥 Crack! Triggering Riff Explosion...`;
 
         setTimeout(() => {
+          // Enable beat instrumental grid
+          if (!this.activeRoles.has('beat')) {
+            this.activeRoles.add('beat');
+          }
+          // Force new vocal layer explosion if room
+          this.addLayer();
+          // Resync active vocal/beat streams
           this.triggerSnap();
+
           statusEl.className = 'status-badge active';
-          statusEl.innerText = `⚡ Integrated Impact! Snap Alignment #${this.userProfile.snapCount}`;
-        }, delayMs);
+          statusEl.innerText = `⚡ Riff Explosion Active! Snap Hit #${this.userProfile.snapCount}`;
+        }, 120);
       }
 
       testAB(choice) {
@@ -329,9 +364,19 @@
         this.saveProfile();
         this.updateProfileUI();
 
+        // Enable beat instrumental + vocals on Option A/B selection
+        if (!this.activeRoles.has('beat')) {
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+        if (!this.activeRoles.has('anchor')) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = `Preference Saved: Option ${choice} (${this.userProfile.prefStyle})`;
+        statusEl.innerText = `Option ${choice} Active (${this.userProfile.prefStyle})`;
       }
 
       saveProfile() { localStorage.setItem('MFE_Profile', JSON.stringify(this.userProfile)); }
@@ -377,41 +422,35 @@
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge loading';
-        statusEl.innerText = '⚡ Loading Americana Stems...';
-
-        const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
-        if (firstBeat) this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 'b1'));
+        statusEl.innerText = '⚡ Loading Americana Vocal Stems...';
 
         const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
         if (firstVocal) this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 'v7'));
 
-        this.syncEngineState();
-        this.loadRemainingBackground();
-      }
+        const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
+        if (firstBeat) this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 'b1'));
 
-      async loadRemainingBackground() {
-        for (let i = 1; i < this.beatManifest.length; i++) {
-          const b = await this.fetchAndDecode(this.beatManifest[i].path);
-          if (b) this.beatBuffers.push(...this.sliceAudioBuffer(b, this.beatManifest[i].name, `b${i+1}`));
-        }
-        for (let i = 1; i < this.vocalManifest.length; i++) {
-          const v = await this.fetchAndDecode(this.vocalManifest[i].path);
-          if (v) this.vocalBuffers.push(...this.sliceAudioBuffer(v, this.vocalManifest[i].name, `v${i+1}`));
-        }
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = 'Engine Ready • Full Stem Pool Active';
-      }
-
-      syncEngineState() {
-        if (this.beatBuffers.length > 0 && !this.activeRoles.has('beat')) {
-          this.activeRoles.add('beat');
-          this.playRoleNext('beat');
-        }
+        // Start Vocals-Only on cold start
         if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
           this.activeRoles.add('anchor');
           this.playRoleNext('anchor');
         }
+
+        this.loadRemainingBackground();
+      }
+
+      async loadRemainingBackground() {
+        for (let i = 1; i < this.vocalManifest.length; i++) {
+          const v = await this.fetchAndDecode(this.vocalManifest[i].path);
+          if (v) this.vocalBuffers.push(...this.sliceAudioBuffer(v, this.vocalManifest[i].name, `v${i+1}`));
+        }
+        for (let i = 1; i < this.beatManifest.length; i++) {
+          const b = await this.fetchAndDecode(this.beatManifest[i].path);
+          if (b) this.beatBuffers.push(...this.sliceAudioBuffer(b, this.beatManifest[i].name, `b${i+1}`));
+        }
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = 'Engine Ready • Vocals Active';
       }
 
       getRandomBuffer(role) {
@@ -419,9 +458,13 @@
         return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
       }
 
+      // CRITICAL BUG FIX: Detach onended before stopping node to prevent rapid infinite recursion!
       stopRoleNode(role) {
         if (this.activeNodes[role]) {
-          try { this.activeNodes[role].source.stop(); } catch(e) {}
+          try {
+            this.activeNodes[role].source.onended = null;
+            this.activeNodes[role].source.stop();
+          } catch(e) {}
           this.activeNodes[role] = null;
         }
       }
@@ -455,8 +498,10 @@
         document.getElementById(config.el).innerText = stem.name;
       }
 
+      // Vocals-Only expansion logic
       addLayer() {
-        for (let role of ['lead', 'counter', 'echo']) {
+        this.initContext();
+        for (let role of ['anchor', 'lead', 'counter', 'echo']) {
           if (!this.activeRoles.has(role)) {
             this.activeRoles.add(role);
             this.playRoleNext(role);
@@ -466,7 +511,7 @@
       }
 
       removeLayer() {
-        for (let role of ['echo', 'counter', 'lead']) {
+        for (let role of ['echo', 'counter', 'lead', 'anchor']) {
           if (this.activeRoles.has(role)) {
             this.activeRoles.delete(role);
             this.stopRoleNode(role);
@@ -476,25 +521,27 @@
         }
       }
 
+      // Clean single shuffle with recursion safety
       swapStems() {
-        this.layerOrder.forEach(role => {
+        ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
           if (this.activeRoles.has(role)) this.playRoleNext(role);
         });
       }
 
+      // SNAP: Aligns streams & adds beat grid
       triggerSnap() {
-        ['lead', 'counter', 'echo'].forEach(role => {
-          this.activeRoles.delete(role);
-          this.stopRoleNode(role);
-          document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+        this.initContext();
+        if (!this.activeRoles.has('beat')) {
+          this.activeRoles.add('beat');
+        }
+        ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
+          if (this.activeRoles.has(role)) this.playRoleNext(role);
         });
-        if (!this.activeRoles.has('beat')) { this.activeRoles.add('beat'); this.playRoleNext('beat'); }
-        if (!this.activeRoles.has('anchor')) { this.activeRoles.add('anchor'); this.playRoleNext('anchor'); }
       }
 
       stopAll() {
         this.activeRoles.clear();
-        this.layerOrder.forEach(role => {
+        ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
           this.stopRoleNode(role);
           document.getElementById(this.panConfig[role].el).innerText = 'Stopped';
         });
