@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>MFE Vocal Engine • Adaptive Preference DSP</title>
+  <title>MFE Vocal Engine • Seed & Polyphonic DSP</title>
   <style>
     :root {
       --bg: #0d0f14;
@@ -57,7 +57,6 @@
     .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
     .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
 
-    /* Button Sections */
     .snap-section {
       background: #11141d; border: 1px solid #2d3748; border-radius: 14px;
       padding: 12px; margin-bottom: 14px; text-align: center;
@@ -80,7 +79,6 @@
     }
     .btn-integrated-snap:active { transform: scale(0.95); }
 
-    /* Physical Impact Meters */
     .physicality-card {
       background: #090b0e; border: 1px solid #1f2937; border-radius: 14px;
       padding: 12px; margin-bottom: 14px;
@@ -91,34 +89,12 @@
     .fill-bass { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
     .fill-total { background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); }
 
-    /* A/B Preference Test Card */
-    .ab-card {
-      background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3);
-      border-radius: 14px; padding: 12px; margin-bottom: 14px;
-    }
-    .ab-title { font-size: 0.78rem; font-weight: 700; color: #60a5fa; margin-bottom: 8px; text-transform: uppercase; }
-    .ab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .btn-ab {
-      background: #1f2430; border: 1px solid #3b82f6; color: #fff;
-      padding: 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
-    }
-
-    /* Learned Profile Matrix */
-    .profile-card {
-      background: #090b0e; border: 1px solid #1f2937; border-radius: 12px;
-      padding: 10px 14px; margin-bottom: 14px; font-size: 0.72rem; color: var(--subtext);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .profile-val { font-weight: 800; color: #10b981; }
-
-    /* Layer Display */
     .layer-display {
       background: #0d0f14; border-radius: 12px; padding: 10px; margin-bottom: 14px; border: 1px solid #1f2937;
     }
     .layer-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; border-bottom: 1px solid #1a202c; }
     .layer-row:last-child { border-bottom: none; }
 
-    /* Controls Grid */
     .controls-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .btn-ctrl {
       background: #1f2430; color: var(--text); border: 1px solid #374151;
@@ -128,23 +104,18 @@
     .btn-ctrl:active { transform: scale(0.95); }
     .btn-ctrl .sub { font-size: 0.62rem; font-weight: 400; color: var(--subtext); }
 
-    /* Sticky Viewport Stop Bar */
     .sticky-stop-bar {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 0; left: 0; right: 0;
       background: rgba(13, 15, 20, 0.94);
       backdrop-filter: blur(10px);
       border-top: 1px solid #272c3a;
       padding: 10px 16px;
-      display: flex;
-      justify-content: center;
+      display: flex; justify-content: center;
       z-index: 9999;
     }
     .btn-sticky-stop {
-      max-width: 500px;
-      width: 100%;
+      max-width: 500px; width: 100%;
       background: linear-gradient(135deg, #ef4444, #dc2626);
       color: #fff; border: none; padding: 14px; border-radius: 12px;
       font-size: 1rem; font-weight: 900; cursor: pointer;
@@ -158,22 +129,19 @@
 
   <div class="container">
     <h1>🌾 MFE Adaptive Engine</h1>
-    <div class="subtitle">Real-Time Preference Learning • Zero-Cost DSP</div>
+    <div class="subtitle">Full-Track Seeds • Real-Time Polyphonic DSP</div>
 
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
     <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
 
-    <!-- Distinct Snap Controls -->
     <div class="snap-section">
-      <!-- 1. HARD SNAP (Heavy Explosion + Machine Echo Answer) -->
       <button class="btn-hard-bang" onclick="mfe.triggerHardBangSFX()">
-        💥 HARD SNAP (EXPLOSION BANG)
+        💥 HARD SNAP (SOUND EFFECT OVERLAY)
       </button>
       <div style="font-size: 0.65rem; color: var(--subtext); margin: 4px 0 10px 0;">
-        Fires an instant heavy explosion + instant machine acoustic answer overlay!
+        Fires an instant explosion noise + machine echo overlay without changing the song!
       </div>
 
-      <!-- 2. INTEGRATED SNAP (Physical Beat Impact & Alignment) -->
       <button class="btn-integrated-snap" onclick="mfe.triggerIntegratedSnap()">
         ⚡ INTEGRATED SNAP (BEAT IMPACT & RIFF)
       </button>
@@ -182,7 +150,6 @@
       </div>
     </div>
 
-    <!-- Physical Impact Meters -->
     <div class="physicality-card">
       <div class="meter-label"><span>Rhythm Floor (Bass)</span><span id="txt-bass">0%</span></div>
       <div class="meter-bar-bg"><div class="meter-bar-fill fill-bass" id="bar-bass"></div></div>
@@ -190,22 +157,6 @@
       <div class="meter-bar-bg"><div class="meter-bar-fill fill-total" id="bar-total"></div></div>
     </div>
 
-    <!-- A/B Preference Test Module -->
-    <div class="ab-card">
-      <div class="ab-title">🧪 Live Preference Test (Is it This or That?)</div>
-      <div class="ab-grid">
-        <button class="btn-ab" onclick="mfe.testAB('A')">🅰️ Option A (Sesame Folk)</button>
-        <button class="btn-ab" onclick="mfe.testAB('B')">🅱️ Option B (Motor Horizon)</button>
-      </div>
-    </div>
-
-    <!-- Learned Profile Matrix -->
-    <div class="profile-card">
-      <span>Learned Profile: <span class="profile-val" id="prof-style">Sesame Folk</span></span>
-      <span>Fav Ambiguity: <span class="profile-val" id="prof-amb">R2 Mondegreen</span></span>
-    </div>
-
-    <!-- Active Layer Display -->
     <div class="layer-display">
       <div class="layer-row"><span style="color:#60a5fa; font-weight:700;">BEAT</span><span id="lbl-beat" style="color:var(--subtext);">Muted</span></div>
       <div class="layer-row"><span style="color:#34d399; font-weight:700;">ANCHOR</span><span id="lbl-anchor" style="color:var(--subtext);">Muted</span></div>
@@ -214,15 +165,13 @@
       <div class="layer-row"><span style="color:#f472b6; font-weight:700;">ECHO</span><span id="lbl-echo" style="color:var(--subtext);">Muted</span></div>
     </div>
 
-    <!-- Main Controls -->
     <div class="controls-grid">
-      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">Vocals First</span></button>
+      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">+1 Stream</span></button>
       <button class="btn-ctrl" onclick="mfe.removeLayer()">➖ LESS <span class="sub">-1 Stream</span></button>
       <button class="btn-ctrl" onclick="mfe.swapStems()">🔀 DIFFERENT <span class="sub">Shuffle Once</span></button>
     </div>
   </div>
 
-  <!-- Sticky Viewport Stop Bar -->
   <div class="sticky-stop-bar">
     <button class="btn-sticky-stop" onclick="mfe.stopAll()">
       🛑 STOP ALL (Silence)
@@ -248,14 +197,9 @@
           echo: { pan: -0.50, el: 'lbl-echo' }
         };
 
-        this.userProfile = JSON.parse(localStorage.getItem('MFE_Profile')) || {
-          snapCount: 0,
-          bangCount: 0,
-          prefStyle: 'Sesame Folk',
-          ambiguityBand: 'R2 Mondegreen'
-        };
-
         this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
+        
+        // Existing isolated stem manifests
         this.beatManifest = [
           { id: 'b1', name: 'Heavy Runnin (Motor 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
           { id: 'b2', name: 'Steady Coming (Motor 2)', path: 'beats/beats2.Steady Coming.mp3' },
@@ -266,6 +210,13 @@
           { id: 'v1', name: 'Sunshine Rider (Road 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
           { id: 'v2', name: 'Ray of Light (Horizon 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
           { id: 'v4', name: 'Have Heaven, Honey (Folk 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' }
+        ];
+
+        // NEW 3rd Category: Full Combined Tracks in /seeds/
+        this.seedManifest = [
+          // Update file names below to match your uploaded 12 tracks in /seeds/
+          { id: 's1', name: 'Seed Track 1', path: 'seeds/seed1.mp3' },
+          { id: 's2', name: 'Seed Track 2', path: 'seeds/seed2.mp3' }
         ];
       }
 
@@ -316,32 +267,29 @@
         requestAnimationFrame(updateMeters);
       }
 
-      // 💥 RE-ENGINEERED: True Heavy Acoustic Explosion + Instant Machine Answer Response
       triggerHardBangSFX() {
-        this.initContext();
+        if (!this.ctx) return;
         const now = this.ctx.currentTime;
 
-        // --- LAYER 1: Deep Sub-Bass Impact Thud (120Hz -> 25Hz) ---
         const subOsc = this.ctx.createOscillator();
         const subGain = this.ctx.createGain();
         subOsc.type = 'sine';
-        subOsc.frequency.setValueAtTime(120, now);
-        subOsc.frequency.exponentialRampToValueAtTime(25, now + 0.35);
+        subOsc.frequency.setValueAtTime(140, now);
+        subOsc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
 
-        subGain.gain.setValueAtTime(1.2, now);
-        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        subGain.gain.setValueAtTime(1.0, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
 
         subOsc.connect(subGain);
         subGain.connect(this.masterGain);
         subOsc.start(now);
-        subOsc.stop(now + 0.45);
+        subOsc.stop(now + 0.35);
 
-        // --- LAYER 2: Heavy Low-Pass Noise Body (Dynamite / Sonic Boom Expansion) ---
-        const dur = 0.35;
+        const dur = 0.25;
         const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * dur, this.ctx.sampleRate);
         const data = buf.getChannelData(0);
         for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.22));
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.2));
         }
 
         const noise = this.ctx.createBufferSource();
@@ -349,11 +297,10 @@
 
         const noiseFilter = this.ctx.createBiquadFilter();
         noiseFilter.type = 'lowpass';
-        noiseFilter.frequency.setValueAtTime(900, now);
-        noiseFilter.frequency.exponentialRampToValueAtTime(80, now + dur);
+        noiseFilter.frequency.setValueAtTime(800, now);
 
         const noiseGain = this.ctx.createGain();
-        noiseGain.gain.setValueAtTime(1.0, now);
+        noiseGain.gain.setValueAtTime(0.8, now);
         noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
         noise.connect(noiseFilter);
@@ -361,100 +308,41 @@
         noiseGain.connect(this.masterGain);
         noise.start(now);
 
-        // --- LAYER 3: Computer Machine Response Overlay (Pitched Acoustic Echo @ +150ms) ---
         setTimeout(() => {
           if (!this.ctx) return;
           const now2 = this.ctx.currentTime;
           
-          // Dual harmonic ping (E5 / B5) with stereo panner to create distinct machine feedback
           const chimeOsc = this.ctx.createOscillator();
           const chimeGain = this.ctx.createGain();
-          const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
 
           chimeOsc.type = 'triangle';
-          chimeOsc.frequency.setValueAtTime(659.25, now2); // E5
-          chimeOsc.frequency.exponentialRampToValueAtTime(329.63, now2 + 0.3); // E4 slide down
+          chimeOsc.frequency.setValueAtTime(523.25, now2);
+          chimeOsc.frequency.exponentialRampToValueAtTime(261.63, now2 + 0.25);
 
-          chimeGain.gain.setValueAtTime(0.5, now2);
-          chimeGain.gain.exponentialRampToValueAtTime(0.001, now2 + 0.3);
+          chimeGain.gain.setValueAtTime(0.4, now2);
+          chimeGain.gain.exponentialRampToValueAtTime(0.001, now2 + 0.25);
 
-          if (panner) {
-            panner.pan.setValueAtTime(0.4, now2); // Pan right for acoustic spatial separation
-            chimeOsc.connect(panner);
-            panner.connect(chimeGain);
-          } else {
-            chimeOsc.connect(chimeGain);
-          }
-
+          chimeOsc.connect(chimeGain);
           chimeGain.connect(this.masterGain);
           chimeOsc.start(now2);
-          chimeOsc.stop(now2 + 0.3);
-
-          const statusEl = document.getElementById('status-badge');
-          statusEl.className = 'status-badge active';
-          statusEl.innerText = `🤖 Computer Responded! Overlaid Acoustic Echo (#${this.userProfile.bangCount})`;
-        }, 150);
-
-        this.userProfile.bangCount = (this.userProfile.bangCount || 0) + 1;
-        this.saveProfile();
-
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge loading';
-        statusEl.innerText = `💥 EXPLOSION HIT! Awaiting Computer Response...`;
+          chimeOsc.stop(now2 + 0.25);
+        }, 120);
       }
 
-      // ⚡ INTEGRATED SNAP (Physical Stem Alignment & Riff Explosion)
       triggerIntegratedSnap() {
         this.initContext();
-        
         if (!this.activeRoles.has('beat')) {
           this.activeRoles.add('beat');
         }
-        
         this.addLayer();
 
         ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
           if (this.activeRoles.has(role)) this.playRoleNext(role);
         });
 
-        this.userProfile.snapCount++;
-        this.saveProfile();
-
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = `⚡ Integrated Snap! Stems Aligned for Max Floor Impact (#${this.userProfile.snapCount})`;
-      }
-
-      testAB(choice) {
-        this.initContext();
-        if (choice === 'A') {
-          this.userProfile.prefStyle = 'Sesame Folk';
-          this.userProfile.ambiguityBand = 'R2 Mondegreen';
-        } else {
-          this.userProfile.prefStyle = 'Motor Horizon';
-          this.userProfile.ambiguityBand = 'R1 Anchor';
-        }
-        this.saveProfile();
-        this.updateProfileUI();
-
-        if (!this.activeRoles.has('beat')) {
-          this.activeRoles.add('beat');
-          this.playRoleNext('beat');
-        }
-        if (!this.activeRoles.has('anchor')) {
-          this.activeRoles.add('anchor');
-          this.playRoleNext('anchor');
-        }
-
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = `Option ${choice} Active (${this.userProfile.prefStyle})`;
-      }
-
-      saveProfile() { localStorage.setItem('MFE_Profile', JSON.stringify(this.userProfile)); }
-      updateProfileUI() {
-        document.getElementById('prof-style').innerText = this.userProfile.prefStyle;
-        document.getElementById('prof-amb').innerText = this.userProfile.ambiguityBand;
+        statusEl.innerText = `⚡ Integrated Snap! Stems Aligned for Max Impact`;
       }
 
       calculateRMS(buffer) {
@@ -490,11 +378,10 @@
       async startApp() {
         this.initContext();
         document.getElementById('start-btn').style.display = 'none';
-        this.updateProfileUI();
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge loading';
-        statusEl.innerText = '⚡ Loading Vocal Stems...';
+        statusEl.innerText = '⚡ Loading Stems & Seeds...';
 
         const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
         if (firstVocal) this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 'v7'));
@@ -502,7 +389,6 @@
         const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
         if (firstBeat) this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 'b1'));
 
-        // Vocals-Only Cold Start
         if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
           this.activeRoles.add('anchor');
           this.playRoleNext('anchor');
@@ -520,9 +406,18 @@
           const b = await this.fetchAndDecode(this.beatManifest[i].path);
           if (b) this.beatBuffers.push(...this.sliceAudioBuffer(b, this.beatManifest[i].name, `b${i+1}`));
         }
+        // Ingest Full-Track Seeds into buffer pools
+        for (let i = 0; i < this.seedManifest.length; i++) {
+          const s = await this.fetchAndDecode(this.seedManifest[i].path);
+          if (s) {
+            const slices = this.sliceAudioBuffer(s, this.seedManifest[i].name, `s${i+1}`);
+            this.vocalBuffers.push(...slices);
+            this.beatBuffers.push(...slices);
+          }
+        }
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = 'Engine Ready • Vocals Active';
+        statusEl.innerText = 'Engine Ready • All Seeds Active';
       }
 
       getRandomBuffer(role) {
