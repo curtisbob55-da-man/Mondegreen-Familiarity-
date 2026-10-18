@@ -165,12 +165,12 @@
 
     <!-- Distinct Snap Controls -->
     <div class="snap-section">
-      <!-- 1. HARD BANG (Instant Sound Effect + Overlay) -->
+      <!-- 1. HARD SNAP (Heavy Explosion + Machine Echo Answer) -->
       <button class="btn-hard-bang" onclick="mfe.triggerHardBangSFX()">
-        💥 HARD SNAP (SOUND EFFECT)
+        💥 HARD SNAP (EXPLOSION BANG)
       </button>
       <div style="font-size: 0.65rem; color: var(--subtext); margin: 4px 0 10px 0;">
-        Fires an instant heavy bang/explosion + instant computer response sound overlay!
+        Fires an instant heavy explosion + instant machine acoustic answer overlay!
       </div>
 
       <!-- 2. INTEGRATED SNAP (Physical Beat Impact & Alignment) -->
@@ -199,7 +199,7 @@
       </div>
     </div>
 
-    <!-- Learner Profile Output -->
+    <!-- Learned Profile Matrix -->
     <div class="profile-card">
       <span>Learned Profile: <span class="profile-val" id="prof-style">Sesame Folk</span></span>
       <span>Fav Ambiguity: <span class="profile-val" id="prof-amb">R2 Mondegreen</span></span>
@@ -316,93 +316,103 @@
         requestAnimationFrame(updateMeters);
       }
 
-      // 1. 💥 HARD BANG (Instant Heavy Sound Effect + Immediate Computer Response Overlay)
+      // 💥 RE-ENGINEERED: True Heavy Acoustic Explosion + Instant Machine Answer Response
       triggerHardBangSFX() {
         this.initContext();
         const now = this.ctx.currentTime;
 
-        // --- PART A: User Sound Effect (Heavy Explosion / Sonic Boom / Sub Blast) ---
-        // Sub Bass Sine Sweep (180 Hz -> 25 Hz)
+        // --- LAYER 1: Deep Sub-Bass Impact Thud (120Hz -> 25Hz) ---
         const subOsc = this.ctx.createOscillator();
         const subGain = this.ctx.createGain();
         subOsc.type = 'sine';
-        subOsc.frequency.setValueAtTime(180, now);
-        subOsc.frequency.exponentialRampToValueAtTime(25, now + 0.4);
+        subOsc.frequency.setValueAtTime(120, now);
+        subOsc.frequency.exponentialRampToValueAtTime(25, now + 0.35);
 
-        subGain.gain.setValueAtTime(1.0, now);
-        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        subGain.gain.setValueAtTime(1.2, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
 
         subOsc.connect(subGain);
         subGain.connect(this.masterGain);
         subOsc.start(now);
-        subOsc.stop(now + 0.5);
+        subOsc.stop(now + 0.45);
 
-        // Heavy High-Pass Noise Burst for Explosive Snap
-        const dur = 0.12;
+        // --- LAYER 2: Heavy Low-Pass Noise Body (Dynamite / Sonic Boom Expansion) ---
+        const dur = 0.35;
         const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * dur, this.ctx.sampleRate);
         const data = buf.getChannelData(0);
         for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.15));
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.22));
         }
 
         const noise = this.ctx.createBufferSource();
         noise.buffer = buf;
 
         const noiseFilter = this.ctx.createBiquadFilter();
-        noiseFilter.type = 'bandpass';
-        noiseFilter.frequency.setValueAtTime(800 + Math.random() * 800, now);
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.setValueAtTime(900, now);
+        noiseFilter.frequency.exponentialRampToValueAtTime(80, now + dur);
 
         const noiseGain = this.ctx.createGain();
         noiseGain.gain.setValueAtTime(1.0, now);
-        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + dur);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
         noise.connect(noiseFilter);
         noiseFilter.connect(noiseGain);
         noiseGain.connect(this.masterGain);
         noise.start(now);
 
-        // --- PART B: Instantaneous Computer Response Overlay (~100ms later) ---
-        // Overlays a secondary metallic acoustic shimmer directly over the playing audio
+        // --- LAYER 3: Computer Machine Response Overlay (Pitched Acoustic Echo @ +150ms) ---
         setTimeout(() => {
           if (!this.ctx) return;
           const now2 = this.ctx.currentTime;
           
-          const echoOsc = this.ctx.createOscillator();
-          const echoGain = this.ctx.createGain();
-          echoOsc.type = 'triangle';
-          echoOsc.frequency.setValueAtTime(440 + Math.random() * 300, now2);
-          echoOsc.frequency.exponentialRampToValueAtTime(120, now2 + 0.25);
+          // Dual harmonic ping (E5 / B5) with stereo panner to create distinct machine feedback
+          const chimeOsc = this.ctx.createOscillator();
+          const chimeGain = this.ctx.createGain();
+          const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
 
-          echoGain.gain.setValueAtTime(0.4, now2);
-          echoGain.gain.exponentialRampToValueAtTime(0.001, now2 + 0.25);
+          chimeOsc.type = 'triangle';
+          chimeOsc.frequency.setValueAtTime(659.25, now2); // E5
+          chimeOsc.frequency.exponentialRampToValueAtTime(329.63, now2 + 0.3); // E4 slide down
 
-          echoOsc.connect(echoGain);
-          echoGain.connect(this.masterGain);
-          echoOsc.start(now2);
-          echoOsc.stop(now2 + 0.25);
-        }, 100);
+          chimeGain.gain.setValueAtTime(0.5, now2);
+          chimeGain.gain.exponentialRampToValueAtTime(0.001, now2 + 0.3);
+
+          if (panner) {
+            panner.pan.setValueAtTime(0.4, now2); // Pan right for acoustic spatial separation
+            chimeOsc.connect(panner);
+            panner.connect(chimeGain);
+          } else {
+            chimeOsc.connect(chimeGain);
+          }
+
+          chimeGain.connect(this.masterGain);
+          chimeOsc.start(now2);
+          chimeOsc.stop(now2 + 0.3);
+
+          const statusEl = document.getElementById('status-badge');
+          statusEl.className = 'status-badge active';
+          statusEl.innerText = `🤖 Computer Responded! Overlaid Acoustic Echo (#${this.userProfile.bangCount})`;
+        }, 150);
 
         this.userProfile.bangCount = (this.userProfile.bangCount || 0) + 1;
         this.saveProfile();
 
         const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = `💥 Hard Bang + Instant Computer Response Overlay (#${this.userProfile.bangCount})`;
+        statusEl.className = 'status-badge loading';
+        statusEl.innerText = `💥 EXPLOSION HIT! Awaiting Computer Response...`;
       }
 
-      // 2. ⚡ INTEGRATED SNAP (Physical Stem Alignment & Riff Explosion - 10/10 Rated)
+      // ⚡ INTEGRATED SNAP (Physical Stem Alignment & Riff Explosion)
       triggerIntegratedSnap() {
         this.initContext();
         
-        // Ensure beat layer is active
         if (!this.activeRoles.has('beat')) {
           this.activeRoles.add('beat');
         }
         
-        // Add additional vocal layer for riff expansion if available
         this.addLayer();
 
-        // Resync and align all active stem playback positions on the beat grid
         ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
           if (this.activeRoles.has(role)) this.playRoleNext(role);
         });
