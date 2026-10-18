@@ -21,7 +21,7 @@
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
-      padding: 16px 16px 90px 16px; /* Bottom padding for sticky stop bar */
+      padding: 16px 16px 90px 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -57,19 +57,28 @@
     .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
     .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
 
-    /* Transient Snap Control */
+    /* Button Sections */
     .snap-section {
       background: #11141d; border: 1px solid #2d3748; border-radius: 14px;
       padding: 12px; margin-bottom: 14px; text-align: center;
     }
-    .btn-hard-snap {
+    .btn-hard-bang {
       width: 100%; background: linear-gradient(135deg, #ef4444, #dc2626);
       color: #fff; border: none; padding: 14px; border-radius: 12px;
       font-size: 1rem; font-weight: 900; cursor: pointer;
       box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
       display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .btn-hard-snap:active { transform: scale(0.95); }
+    .btn-hard-bang:active { transform: scale(0.95); }
+
+    .btn-integrated-snap {
+      width: 100%; background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff; border: none; padding: 12px; border-radius: 12px;
+      font-size: 0.95rem; font-weight: 800; cursor: pointer; margin-top: 8px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-integrated-snap:active { transform: scale(0.95); }
 
     /* Physical Impact Meters */
     .physicality-card {
@@ -110,7 +119,7 @@
     .layer-row:last-child { border-bottom: none; }
 
     /* Controls Grid */
-    .controls-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .controls-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .btn-ctrl {
       background: #1f2430; color: var(--text); border: 1px solid #374151;
       padding: 12px 4px; border-radius: 12px; font-size: 0.85rem; font-weight: 700;
@@ -119,13 +128,13 @@
     .btn-ctrl:active { transform: scale(0.95); }
     .btn-ctrl .sub { font-size: 0.62rem; font-weight: 400; color: var(--subtext); }
 
-    /* Sticky Floating Stop Bar */
+    /* Sticky Viewport Stop Bar */
     .sticky-stop-bar {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: rgba(13, 15, 20, 0.92);
+      background: rgba(13, 15, 20, 0.94);
       backdrop-filter: blur(10px);
       border-top: 1px solid #272c3a;
       padding: 10px 16px;
@@ -154,13 +163,22 @@
     <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
     <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
 
-    <!-- Transient Snap & Match Button -->
+    <!-- Distinct Snap Controls -->
     <div class="snap-section">
-      <button class="btn-hard-snap" onclick="mfe.triggerTactileSnap()">
-        💥 HARD SNAP / CRACK & POP
+      <!-- 1. HARD BANG (Instant Sound Effect + Overlay) -->
+      <button class="btn-hard-bang" onclick="mfe.triggerHardBangSFX()">
+        💥 HARD SNAP (SOUND EFFECT)
       </button>
-      <div style="font-size: 0.68rem; color: var(--subtext); margin-top: 6px;">
-        Fires an instant impact transient + guaranteed rhythmic explosion riff!
+      <div style="font-size: 0.65rem; color: var(--subtext); margin: 4px 0 10px 0;">
+        Fires an instant heavy bang/explosion + instant computer response sound overlay!
+      </div>
+
+      <!-- 2. INTEGRATED SNAP (Physical Beat Impact & Alignment) -->
+      <button class="btn-integrated-snap" onclick="mfe.triggerIntegratedSnap()">
+        ⚡ INTEGRATED SNAP (BEAT IMPACT & RIFF)
+      </button>
+      <div style="font-size: 0.65rem; color: var(--subtext); margin-top: 4px;">
+        Aligns music stems for maximum physical floor impact & triggers riff expansion!
       </div>
     </div>
 
@@ -198,10 +216,9 @@
 
     <!-- Main Controls -->
     <div class="controls-grid">
-      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">+1 Vocals First</span></button>
+      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">Vocals First</span></button>
       <button class="btn-ctrl" onclick="mfe.removeLayer()">➖ LESS <span class="sub">-1 Stream</span></button>
       <button class="btn-ctrl" onclick="mfe.swapStems()">🔀 DIFFERENT <span class="sub">Shuffle Once</span></button>
-      <button class="btn-ctrl" style="border-color:#10b981; color:#34d399;" onclick="mfe.triggerSnap()">⚡ SNAP <span class="sub">Align & Add Beats</span></button>
     </div>
   </div>
 
@@ -222,7 +239,7 @@
         this.vocalBuffers = [];
         this.activeRoles = new Set();
         this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
-        this.layerOrder = ['anchor', 'lead', 'counter', 'echo']; // Vocals first, beat optional
+        this.layerOrder = ['anchor', 'lead', 'counter', 'echo'];
         this.panConfig = {
           beat: { pan: 0.0, el: 'lbl-beat' },
           anchor: { pan: 0.0, el: 'lbl-anchor' },
@@ -233,6 +250,7 @@
 
         this.userProfile = JSON.parse(localStorage.getItem('MFE_Profile')) || {
           snapCount: 0,
+          bangCount: 0,
           prefStyle: 'Sesame Folk',
           ambiguityBand: 'R2 Mondegreen'
         };
@@ -298,58 +316,103 @@
         requestAnimationFrame(updateMeters);
       }
 
-      // 💥 Dynamic Physical Snap Synthesis + Guaranteed Musical Explosion
-      triggerTactileSnap() {
+      // 1. 💥 HARD BANG (Instant Heavy Sound Effect + Immediate Computer Response Overlay)
+      triggerHardBangSFX() {
         this.initContext();
         const now = this.ctx.currentTime;
 
-        // 1. Synthesize physical transient impact
-        const dur = 0.05 + (Math.random() * 0.03);
+        // --- PART A: User Sound Effect (Heavy Explosion / Sonic Boom / Sub Blast) ---
+        // Sub Bass Sine Sweep (180 Hz -> 25 Hz)
+        const subOsc = this.ctx.createOscillator();
+        const subGain = this.ctx.createGain();
+        subOsc.type = 'sine';
+        subOsc.frequency.setValueAtTime(180, now);
+        subOsc.frequency.exponentialRampToValueAtTime(25, now + 0.4);
+
+        subGain.gain.setValueAtTime(1.0, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+        subOsc.connect(subGain);
+        subGain.connect(this.masterGain);
+        subOsc.start(now);
+        subOsc.stop(now + 0.5);
+
+        // Heavy High-Pass Noise Burst for Explosive Snap
+        const dur = 0.12;
         const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * dur, this.ctx.sampleRate);
         const data = buf.getChannelData(0);
-
         for (let i = 0; i < data.length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.18));
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.15));
         }
 
         const noise = this.ctx.createBufferSource();
         noise.buffer = buf;
 
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.setValueAtTime(1000 + Math.random() * 1500, now);
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.setValueAtTime(800 + Math.random() * 800, now);
 
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(1.0, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(1.0, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + dur);
 
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.masterGain);
-
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.masterGain);
         noise.start(now);
 
-        // 2. Guaranteed Musical Explosion: Force Beat stem + Add new vocal stream + Sync snap
+        // --- PART B: Instantaneous Computer Response Overlay (~100ms later) ---
+        // Overlays a secondary metallic acoustic shimmer directly over the playing audio
+        setTimeout(() => {
+          if (!this.ctx) return;
+          const now2 = this.ctx.currentTime;
+          
+          const echoOsc = this.ctx.createOscillator();
+          const echoGain = this.ctx.createGain();
+          echoOsc.type = 'triangle';
+          echoOsc.frequency.setValueAtTime(440 + Math.random() * 300, now2);
+          echoOsc.frequency.exponentialRampToValueAtTime(120, now2 + 0.25);
+
+          echoGain.gain.setValueAtTime(0.4, now2);
+          echoGain.gain.exponentialRampToValueAtTime(0.001, now2 + 0.25);
+
+          echoOsc.connect(echoGain);
+          echoGain.connect(this.masterGain);
+          echoOsc.start(now2);
+          echoOsc.stop(now2 + 0.25);
+        }, 100);
+
+        this.userProfile.bangCount = (this.userProfile.bangCount || 0) + 1;
+        this.saveProfile();
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `💥 Hard Bang + Instant Computer Response Overlay (#${this.userProfile.bangCount})`;
+      }
+
+      // 2. ⚡ INTEGRATED SNAP (Physical Stem Alignment & Riff Explosion - 10/10 Rated)
+      triggerIntegratedSnap() {
+        this.initContext();
+        
+        // Ensure beat layer is active
+        if (!this.activeRoles.has('beat')) {
+          this.activeRoles.add('beat');
+        }
+        
+        // Add additional vocal layer for riff expansion if available
+        this.addLayer();
+
+        // Resync and align all active stem playback positions on the beat grid
+        ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
+          if (this.activeRoles.has(role)) this.playRoleNext(role);
+        });
+
         this.userProfile.snapCount++;
         this.saveProfile();
 
         const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge loading';
-        statusEl.innerText = `💥 Crack! Triggering Riff Explosion...`;
-
-        setTimeout(() => {
-          // Enable beat instrumental grid
-          if (!this.activeRoles.has('beat')) {
-            this.activeRoles.add('beat');
-          }
-          // Force new vocal layer explosion if room
-          this.addLayer();
-          // Resync active vocal/beat streams
-          this.triggerSnap();
-
-          statusEl.className = 'status-badge active';
-          statusEl.innerText = `⚡ Riff Explosion Active! Snap Hit #${this.userProfile.snapCount}`;
-        }, 120);
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `⚡ Integrated Snap! Stems Aligned for Max Floor Impact (#${this.userProfile.snapCount})`;
       }
 
       testAB(choice) {
@@ -364,7 +427,6 @@
         this.saveProfile();
         this.updateProfileUI();
 
-        // Enable beat instrumental + vocals on Option A/B selection
         if (!this.activeRoles.has('beat')) {
           this.activeRoles.add('beat');
           this.playRoleNext('beat');
@@ -422,7 +484,7 @@
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge loading';
-        statusEl.innerText = '⚡ Loading Americana Vocal Stems...';
+        statusEl.innerText = '⚡ Loading Vocal Stems...';
 
         const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
         if (firstVocal) this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 'v7'));
@@ -430,7 +492,7 @@
         const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
         if (firstBeat) this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 'b1'));
 
-        // Start Vocals-Only on cold start
+        // Vocals-Only Cold Start
         if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
           this.activeRoles.add('anchor');
           this.playRoleNext('anchor');
@@ -458,7 +520,6 @@
         return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
       }
 
-      // CRITICAL BUG FIX: Detach onended before stopping node to prevent rapid infinite recursion!
       stopRoleNode(role) {
         if (this.activeNodes[role]) {
           try {
@@ -498,7 +559,6 @@
         document.getElementById(config.el).innerText = stem.name;
       }
 
-      // Vocals-Only expansion logic
       addLayer() {
         this.initContext();
         for (let role of ['anchor', 'lead', 'counter', 'echo']) {
@@ -521,19 +581,7 @@
         }
       }
 
-      // Clean single shuffle with recursion safety
       swapStems() {
-        ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
-          if (this.activeRoles.has(role)) this.playRoleNext(role);
-        });
-      }
-
-      // SNAP: Aligns streams & adds beat grid
-      triggerSnap() {
-        this.initContext();
-        if (!this.activeRoles.has('beat')) {
-          this.activeRoles.add('beat');
-        }
         ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
           if (this.activeRoles.has(role)) this.playRoleNext(role);
         });
