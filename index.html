@@ -26,6 +26,7 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
     }
     .container {
       max-width: 500px;
@@ -37,18 +38,23 @@
       box-sizing: border-box;
       border: 1px solid #272c3a;
     }
-    h1 { margin: 0 0 4px 0; font-size: 1.3rem; text-align: center; }
+    h1 { margin: 0 0 4px 0; font-size: 1.3rem; text-align: center; color: #fff; }
     .subtitle { color: var(--subtext); font-size: 0.78rem; text-align: center; margin-bottom: 16px; }
     
     .btn-start {
       width: 100%; background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: #fff; border: none; padding: 14px; border-radius: 12px;
-      font-size: 1rem; font-weight: 800; cursor: pointer; margin-bottom: 12px;
+      color: #fff; border: none; padding: 16px; border-radius: 14px;
+      font-size: 1.1rem; font-weight: 800; cursor: pointer; margin-bottom: 12px;
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
     }
+    .btn-start:active { transform: scale(0.97); }
+
     .status-badge {
-      display: block; text-align: center; padding: 6px 12px; border-radius: 16px;
+      display: block; text-align: center; padding: 8px 12px; border-radius: 16px;
       font-size: 0.78rem; font-weight: 600; margin-bottom: 14px; background: #252a37; color: #d1d5db;
     }
+    .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
 
     /* Transient Snap Control */
     .snap-section {
@@ -61,8 +67,20 @@
       font-size: 1rem; font-weight: 900; cursor: pointer;
       box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
       display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.05s ease;
     }
-    .btn-hard-snap:active { transform: scale(0.96); }
+    .btn-hard-snap:active { transform: scale(0.95); }
+
+    /* Physical Impact Meters */
+    .physicality-card {
+      background: #090b0e; border: 1px solid #1f2937; border-radius: 14px;
+      padding: 12px; margin-bottom: 14px;
+    }
+    .meter-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--subtext); margin-bottom: 2px; }
+    .meter-bar-bg { height: 8px; background: #1f2430; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+    .meter-bar-fill { height: 100%; width: 0%; transition: width 0.05s ease-out; }
+    .fill-bass { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .fill-total { background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); }
 
     /* A/B Preference Test Card */
     .ab-card {
@@ -75,6 +93,7 @@
       background: #1f2430; border: 1px solid #3b82f6; color: #fff;
       padding: 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
     }
+    .btn-ab:active { transform: scale(0.96); }
 
     /* Learned Profile Matrix */
     .profile-card {
@@ -84,6 +103,13 @@
     }
     .profile-val { font-weight: 800; color: #10b981; }
 
+    /* Layer Display */
+    .layer-display {
+      background: #0d0f14; border-radius: 12px; padding: 10px; margin-bottom: 14px; border: 1px solid #1f2937;
+    }
+    .layer-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; border-bottom: 1px solid #1a202c; }
+    .layer-row:last-child { border-bottom: none; }
+
     /* Controls Grid */
     .controls-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .btn-ctrl {
@@ -92,7 +118,7 @@
       cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;
     }
     .btn-ctrl:active { transform: scale(0.95); }
-    .btn-ctrl .sub { font-size: 0.6rem; font-weight: 400; color: var(--subtext); }
+    .btn-ctrl .sub { font-size: 0.62rem; font-weight: 400; color: var(--subtext); }
   </style>
 </head>
 <body>
@@ -110,23 +136,40 @@
         💥 HARD SNAP / CRACK & POP
       </button>
       <div style="font-size: 0.68rem; color: var(--subtext); margin-top: 6px;">
-        Fires an instant sharp transient & forces engine streams to match the hit!
+        Generates immediate physical noise & schedules automated rhythmic resolution!
       </div>
+    </div>
+
+    <!-- Physical Impact Meters -->
+    <div class="physicality-card">
+      <div class="meter-label"><span>Rhythm Floor (Bass)</span><span id="txt-bass">0%</span></div>
+      <div class="meter-bar-bg"><div class="meter-bar-fill fill-bass" id="bar-bass"></div></div>
+      <div class="meter-label" style="font-weight:700; color:#fff;"><span>PHYSICAL IMPACT SCORE</span><span id="txt-total">0%</span></div>
+      <div class="meter-bar-bg"><div class="meter-bar-fill fill-total" id="bar-total"></div></div>
     </div>
 
     <!-- A/B Preference Test Module -->
     <div class="ab-card">
       <div class="ab-title">🧪 Live Preference Test (Is it This or That?)</div>
       <div class="ab-grid">
-        <button class="btn-ab" onclick="mfe.testAB('A')">🅰️ Option A (Folk Anchor)</button>
+        <button class="btn-ab" onclick="mfe.testAB('A')">🅰️ Option A (Sesame Folk)</button>
         <button class="btn-ab" onclick="mfe.testAB('B')">🅱️ Option B (Motor Horizon)</button>
       </div>
     </div>
 
     <!-- Learner Profile Output -->
     <div class="profile-card">
-      <span>Learned Profile: <span class="profile-val" id="prof-style">Balanced</span></span>
+      <span>Learned Profile: <span class="profile-val" id="prof-style">Sesame Folk</span></span>
       <span>Fav Ambiguity: <span class="profile-val" id="prof-amb">R2 Mondegreen</span></span>
+    </div>
+
+    <!-- Active Layer Display -->
+    <div class="layer-display">
+      <div class="layer-row"><span style="color:#60a5fa; font-weight:700;">BEAT</span><span id="lbl-beat" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#34d399; font-weight:700;">ANCHOR</span><span id="lbl-anchor" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#fcd34d; font-weight:700;">LEAD</span><span id="lbl-lead" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#c084fc; font-weight:700;">COUNTER</span><span id="lbl-counter" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#f472b6; font-weight:700;">ECHO</span><span id="lbl-echo" style="color:var(--subtext);">Muted</span></div>
     </div>
 
     <!-- Main Controls -->
@@ -140,70 +183,142 @@
   </div>
 
   <script>
-    class MFEAdaptiveEngine {
+    class MFEAudioEngine {
       constructor() {
         this.ctx = null;
         this.masterGain = null;
+        this.analyser = null;
+        this.beatBuffers = [];
+        this.vocalBuffers = [];
+        this.activeRoles = new Set();
+        this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.lastPlayedStem = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.layerOrder = ['beat', 'anchor', 'lead', 'counter', 'echo'];
+        this.panConfig = {
+          beat: { pan: 0.0, el: 'lbl-beat' },
+          anchor: { pan: 0.0, el: 'lbl-anchor' },
+          lead: { pan: -0.25, el: 'lbl-lead' },
+          counter: { pan: 0.35, el: 'lbl-counter' },
+          echo: { pan: -0.50, el: 'lbl-echo' }
+        };
+
         this.userProfile = JSON.parse(localStorage.getItem('MFE_Profile')) || {
           snapCount: 0,
           prefStyle: 'Sesame Folk',
-          ambiguityBand: 'R2',
-          totalInteractions: 0
+          ambiguityBand: 'R2 Mondegreen'
         };
+
+        this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
+        this.beatManifest = [
+          { id: 'b1', name: 'Heavy Runnin (Motor 1)', path: 'beats/beats1. Heavy Runnin.mp3' },
+          { id: 'b2', name: 'Steady Coming (Motor 2)', path: 'beats/beats2.Steady Coming.mp3' },
+          { id: 'b3', name: 'Have Heaven, Honey (Road 3)', path: 'beats/beats3.Have Heaven, Honey.mp3' }
+        ];
+        this.vocalManifest = [
+          { id: 'v7', name: 'Sesame Seed (Sesame Folk 7)', path: 'vocals/vocal7.sesame seed.mp3' },
+          { id: 'v1', name: 'Sunshine Rider (Road 1)', path: 'vocals/vocal1.sunshine rider.mp3' },
+          { id: 'v2', name: 'Ray of Light (Horizon 2)', path: 'vocals/vocal2.Ray of Light.mp3' },
+          { id: 'v4', name: 'Have Heaven, Honey (Folk 4)', path: 'vocals/vocal4.Have Heaven, Honey.mp3' }
+        ];
       }
 
-      init() {
+      initContext() {
         if (!this.ctx) {
           const AudioCtx = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioCtx();
           this.masterGain = this.ctx.createGain();
-          this.masterGain.connect(this.ctx.destination);
+          this.analyser = this.ctx.createAnalyser();
+          this.analyser.fftSize = 512;
+
+          this.masterGain.connect(this.analyser);
+          this.analyser.connect(this.ctx.destination);
+
+          this.startPhysicalityLoop();
         }
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
       }
 
-      // $0 Cost Synthesized Hard Snap / Crack / Pop
+      startPhysicalityLoop() {
+        const freqData = new Uint8Array(this.analyser.frequencyBinCount);
+        const updateMeters = () => {
+          if (this.activeRoles.size > 0) {
+            this.analyser.getByteFrequencyData(freqData);
+
+            let bassSum = 0;
+            for (let i = 0; i < 10; i++) bassSum += freqData[i];
+            let bassScore = Math.min(100, Math.round((bassSum / (10 * 255)) * 120));
+
+            let totalSum = 0;
+            for (let i = 0; i < freqData.length; i++) totalSum += freqData[i];
+            let totalImpact = Math.min(100, Math.round((totalSum / (freqData.length * 255)) * 150));
+
+            document.getElementById('bar-bass').style.width = bassScore + '%';
+            document.getElementById('txt-bass').innerText = bassScore + '%';
+            document.getElementById('bar-total').style.width = totalImpact + '%';
+            document.getElementById('txt-total').innerText = totalImpact + '%';
+          } else {
+            document.getElementById('bar-bass').style.width = '0%';
+            document.getElementById('txt-bass').innerText = '0%';
+            document.getElementById('bar-total').style.width = '0%';
+            document.getElementById('txt-total').innerText = '0%';
+          }
+          requestAnimationFrame(updateMeters);
+        };
+        requestAnimationFrame(updateMeters);
+      }
+
+      // 💥 Dynamic Physical Snap Synthesis & Machine Matching
       triggerTactileSnap() {
-        this.init();
+        this.initContext();
         const now = this.ctx.currentTime;
 
-        // 1. Synthesize sharp noise crack
-        const bufferSize = this.ctx.sampleRate * 0.05; // 50ms burst
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.15));
+        // 1. Synthesize a UNIQUE physical impact transient every time
+        const snapType = Math.floor(Math.random() * 3); // 0: Wood crack, 1: Sub thud, 2: Metallic pop
+        const dur = 0.04 + (Math.random() * 0.04);
+        const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * dur, this.ctx.sampleRate);
+        const data = buf.getChannelData(0);
+
+        for (let i = 0; i < data.length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.2));
         }
 
         const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
+        noise.buffer = buf;
 
         const filter = this.ctx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.setValueAtTime(1200, now);
+        filter.type = snapType === 1 ? 'lowpass' : 'highpass';
+        filter.frequency.setValueAtTime(snapType === 1 ? 180 + Math.random() * 100 : 1200 + Math.random() * 1500, now);
 
-        const snapGain = this.ctx.createGain();
-        snapGain.gain.setValueAtTime(1.0, now);
-        snapGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(1.0, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
         noise.connect(filter);
-        filter.connect(snapGain);
-        snapGain.connect(this.masterGain);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
 
         noise.start(now);
 
-        // 2. Machine Reaction: Match engine playback to transient hit
+        // 2. Scheduled Machine Integration (Rhythmic Snap)
         this.userProfile.snapCount++;
         this.saveProfile();
-        
+
         const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = `💥 Crack & Pop! Engine Re-Aligned (#${this.userProfile.snapCount})`;
+        statusEl.className = 'status-badge loading';
+        const delayMs = Math.floor(180 + Math.random() * 120);
+        statusEl.innerText = `💥 Crack! Machine Re-Aligning in ${delayMs}ms...`;
+
+        setTimeout(() => {
+          this.triggerSnap();
+          statusEl.className = 'status-badge active';
+          statusEl.innerText = `⚡ Integrated Impact! Snap Alignment #${this.userProfile.snapCount}`;
+        }, delayMs);
       }
 
       testAB(choice) {
-        this.init();
-        this.userProfile.totalInteractions++;
+        this.initContext();
         if (choice === 'A') {
           this.userProfile.prefStyle = 'Sesame Folk';
           this.userProfile.ambiguityBand = 'R2 Mondegreen';
@@ -216,39 +331,180 @@
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
-        statusEl.innerText = `Logged Choice: Option ${choice} (${this.userProfile.prefStyle})`;
+        statusEl.innerText = `Preference Saved: Option ${choice} (${this.userProfile.prefStyle})`;
       }
 
-      saveProfile() {
-        localStorage.setItem('MFE_Profile', JSON.stringify(this.userProfile));
-      }
-
+      saveProfile() { localStorage.setItem('MFE_Profile', JSON.stringify(this.userProfile)); }
       updateProfileUI() {
         document.getElementById('prof-style').innerText = this.userProfile.prefStyle;
         document.getElementById('prof-amb').innerText = this.userProfile.ambiguityBand;
       }
 
-      async startApp() {
-        this.init();
-        document.getElementById('start-btn').style.display = 'none';
-        this.updateProfileUI();
-        const statusEl = document.getElementById('status-badge');
-        statusEl.className = 'status-badge active';
-        statusEl.innerText = 'Engine Active • Profile Loaded';
+      calculateRMS(buffer) {
+        const data = buffer.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 100) sum += data[i] * data[i];
+        return Math.sqrt(sum / (data.length / 100));
       }
 
-      addLayer() { this.init(); }
-      removeLayer() { this.init(); }
-      swapStems() { this.init(); }
-      triggerSnap() { this.init(); }
+      sliceAudioBuffer(fullBuffer, fileName, stemId, numSlices = 6) {
+        const slices = [];
+        const sliceSamples = Math.floor(fullBuffer.length / numSlices);
+        for (let i = 0; i < numSlices; i++) {
+          const sliceBuffer = this.ctx.createBuffer(fullBuffer.numberOfChannels, sliceSamples, fullBuffer.sampleRate);
+          for (let ch = 0; ch < fullBuffer.numberOfChannels; ch++) {
+            sliceBuffer.getChannelData(ch).set(fullBuffer.getChannelData(ch).subarray(i * sliceSamples, (i + 1) * sliceSamples));
+          }
+          if (this.calculateRMS(sliceBuffer) > 0.005) {
+            slices.push({ id: `${stemId}_s${i+1}`, name: `${fileName} [S${i + 1}]`, buffer: sliceBuffer });
+          }
+        }
+        return slices;
+      }
+
+      async fetchAndDecode(path) {
+        try {
+          const res = await fetch(encodeURI(this.baseUrl + path));
+          const arrayBuf = await res.arrayBuffer();
+          return await this.ctx.decodeAudioData(arrayBuf);
+        } catch(e) { return null; }
+      }
+
+      async startApp() {
+        this.initContext();
+        document.getElementById('start-btn').style.display = 'none';
+        this.updateProfileUI();
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge loading';
+        statusEl.innerText = '⚡ Loading Americana Stems...';
+
+        const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
+        if (firstBeat) this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 'b1'));
+
+        const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
+        if (firstVocal) this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 'v7'));
+
+        this.syncEngineState();
+        this.loadRemainingBackground();
+      }
+
+      async loadRemainingBackground() {
+        for (let i = 1; i < this.beatManifest.length; i++) {
+          const b = await this.fetchAndDecode(this.beatManifest[i].path);
+          if (b) this.beatBuffers.push(...this.sliceAudioBuffer(b, this.beatManifest[i].name, `b${i+1}`));
+        }
+        for (let i = 1; i < this.vocalManifest.length; i++) {
+          const v = await this.fetchAndDecode(this.vocalManifest[i].path);
+          if (v) this.vocalBuffers.push(...this.sliceAudioBuffer(v, this.vocalManifest[i].name, `v${i+1}`));
+        }
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = 'Engine Ready • Full Stem Pool Active';
+      }
+
+      syncEngineState() {
+        if (this.beatBuffers.length > 0 && !this.activeRoles.has('beat')) {
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+        if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+      }
+
+      getRandomBuffer(role) {
+        const pool = (role === 'beat') ? this.beatBuffers : this.vocalBuffers;
+        return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
+      }
+
+      stopRoleNode(role) {
+        if (this.activeNodes[role]) {
+          try { this.activeNodes[role].source.stop(); } catch(e) {}
+          this.activeNodes[role] = null;
+        }
+      }
+
+      playRoleNext(role) {
+        if (!this.activeRoles.has(role)) return;
+        this.stopRoleNode(role);
+
+        const stem = this.getRandomBuffer(role);
+        if (!stem) return;
+
+        const config = this.panConfig[role];
+        const source = this.ctx.createBufferSource();
+        source.buffer = stem.buffer;
+
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (panner) panner.pan.value = config.pan;
+
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.value = (role === 'beat') ? 0.75 : 0.85;
+
+        if (panner) { source.connect(panner); panner.connect(gainNode); }
+        else { source.connect(gainNode); }
+
+        gainNode.connect(this.masterGain);
+
+        source.onended = () => { if (this.activeRoles.has(role)) this.playRoleNext(role); };
+        source.start(0);
+
+        this.activeNodes[role] = { source, gainNode };
+        document.getElementById(config.el).innerText = stem.name;
+      }
+
+      addLayer() {
+        for (let role of ['lead', 'counter', 'echo']) {
+          if (!this.activeRoles.has(role)) {
+            this.activeRoles.add(role);
+            this.playRoleNext(role);
+            break;
+          }
+        }
+      }
+
+      removeLayer() {
+        for (let role of ['echo', 'counter', 'lead']) {
+          if (this.activeRoles.has(role)) {
+            this.activeRoles.delete(role);
+            this.stopRoleNode(role);
+            document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+            break;
+          }
+        }
+      }
+
+      swapStems() {
+        this.layerOrder.forEach(role => {
+          if (this.activeRoles.has(role)) this.playRoleNext(role);
+        });
+      }
+
+      triggerSnap() {
+        ['lead', 'counter', 'echo'].forEach(role => {
+          this.activeRoles.delete(role);
+          this.stopRoleNode(role);
+          document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+        });
+        if (!this.activeRoles.has('beat')) { this.activeRoles.add('beat'); this.playRoleNext('beat'); }
+        if (!this.activeRoles.has('anchor')) { this.activeRoles.add('anchor'); this.playRoleNext('anchor'); }
+      }
+
       stopAll() {
+        this.activeRoles.clear();
+        this.layerOrder.forEach(role => {
+          this.stopRoleNode(role);
+          document.getElementById(this.panConfig[role].el).innerText = 'Stopped';
+        });
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge';
         statusEl.innerText = 'Stopped';
       }
     }
 
-    const mfe = new MFEAdaptiveEngine();
+    const mfe = new MFEAudioEngine();
   </script>
 </body>
 </html>
