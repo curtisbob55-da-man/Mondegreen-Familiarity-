@@ -205,7 +205,6 @@
 
         this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
         
-        // Configured directly from your denver_beats folder
         this.beatManifest = [
           { id: 'db1', name: 'Big Guzzler (Beat)', path: 'denver_beats/big-guzzler_instrum.mp3' },
           { id: 'db2', name: 'Corny Flagpole (Beat)', path: 'denver_beats/corny-flagpole_instrum.mp3' },
@@ -219,7 +218,6 @@
           { id: 'db10', name: 'Wrappa Tippah (Beat)', path: 'denver_beats/wrappa tippah_instrumental.mp3' }
         ];
 
-        // Configured directly from your denver_vocals folder
         this.vocalManifest = [
           { id: 'dv1', name: 'Big Guzzler (Vocal)', path: 'denver_vocals/big-guzzler_vocals.mp3' },
           { id: 'dv2', name: 'Corny Flagpole (Vocal)', path: 'denver_vocals/corny-flagpole_vocals.mp3' },
@@ -389,38 +387,56 @@
         } catch(e) { return null; }
       }
 
+      // FAST 3-SECOND COLD-START
       async startApp() {
         this.initContext();
         document.getElementById('start-btn').style.display = 'none';
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge loading';
-        statusEl.innerText = '⚡ Loading Denver Altitude Stems...';
+        statusEl.innerText = '⚡ Starting Instantly...';
 
-        const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
-        if (firstVocal) this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 'dv1'));
+        // Parallel fetch of initial pair only
+        const [firstVocal, firstBeat] = await Promise.all([
+          this.fetchAndDecode(this.vocalManifest[0].path),
+          this.fetchAndDecode(this.beatManifest[0].path)
+        ]);
 
-        const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
-        if (firstBeat) this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 'db1'));
-
-        if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
+        if (firstVocal) {
+          this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 'dv1'));
           this.activeRoles.add('anchor');
           this.playRoleNext('anchor');
         }
 
+        if (firstBeat) {
+          this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 'db1'));
+          this.activeRoles.add('beat');
+          this.playRoleNext('beat');
+        }
+
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = '▶️ Playing • Loading Remaining Stems...';
+
+        // Load remaining 18 stems silently in background
         this.loadRemainingBackground();
       }
 
       async loadRemainingBackground() {
-        for (let i = 1; i < this.vocalManifest.length; i++) {
-          const v = await this.fetchAndDecode(this.vocalManifest[i].path);
-          if (v) this.vocalBuffers.push(...this.sliceAudioBuffer(v, this.vocalManifest[i].name, `dv${i+1}`));
-        }
+        const vocalPromises = this.vocalManifest.slice(1).map(async (item, idx) => {
+          const buf = await this.fetchAndDecode(item.path);
+          if (buf) {
+            this.vocalBuffers.push(...this.sliceAudioBuffer(buf, item.name, `dv${idx + 2}`));
+          }
+        });
 
-        for (let i = 1; i < this.beatManifest.length; i++) {
-          const b = await this.fetchAndDecode(this.beatManifest[i].path);
-          if (b) this.beatBuffers.push(...this.sliceAudioBuffer(b, this.beatManifest[i].name, `db${i+1}`));
-        }
+        const beatPromises = this.beatManifest.slice(1).map(async (item, idx) => {
+          const buf = await this.fetchAndDecode(item.path);
+          if (buf) {
+            this.beatBuffers.push(...this.sliceAudioBuffer(buf, item.name, `db${idx + 2}`));
+          }
+        });
+
+        await Promise.all([...vocalPromises, ...beatPromises]);
 
         const statusEl = document.getElementById('status-badge');
         statusEl.className = 'status-badge active';
