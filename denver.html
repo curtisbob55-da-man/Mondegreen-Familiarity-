@@ -1,1 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MFE Denver • High-Altitude Western Club DSP</title>
+  <style>
+    :root {
+      --bg: #0b0711;
+      --card: #150d22;
+      --accent-pink: #f43f5e;
+      --accent-purple: #8b5cf6;
+      --accent-gold: #f59e0b;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --text: #f8fafc;
+      --subtext: #a78bfa;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 16px 16px 110px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 12px 36px rgba(139, 92, 246, 0.25);
+      box-sizing: border-box;
+      border: 1px solid #2e1065;
+    }
+    h1 { margin: 0 0 4px 0; font-size: 1.35rem; text-align: center; color: var(--accent-gold); }
+    .subtitle { color: var(--subtext); font-size: 0.78rem; text-align: center; margin-bottom: 16px; }
+    
+    .btn-start {
+      width: 100%; background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      color: #fff; border: none; padding: 16px; border-radius: 14px;
+      font-size: 1.1rem; font-weight: 800; cursor: pointer; margin-bottom: 12px;
+      box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+    }
+    .btn-start:active { transform: scale(0.97); }
 
+    .status-badge {
+      display: block; text-align: center; padding: 8px 12px; border-radius: 16px;
+      font-size: 0.78rem; font-weight: 600; margin-bottom: 14px; background: #2e1065; color: #ddd6fe;
+    }
+    .status-badge.active { background: rgba(16, 185, 129, 0.18); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-badge.loading { background: rgba(245, 158, 11, 0.18); color: var(--accent-gold); border: 1px solid rgba(245, 158, 11, 0.4); }
+
+    .snap-section {
+      background: #1e1135; border: 1px solid #4c1d95; border-radius: 14px;
+      padding: 12px; margin-bottom: 14px; text-align: center;
+    }
+    .btn-hard-bang {
+      width: 100%; background: linear-gradient(135deg, #f43f5e, #e11d48);
+      color: #fff; border: none; padding: 14px; border-radius: 12px;
+      font-size: 1rem; font-weight: 900; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(244, 63, 94, 0.4);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-hard-bang:active { transform: scale(0.95); }
+
+    .btn-integrated-snap {
+      width: 100%; background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff; border: none; padding: 12px; border-radius: 12px;
+      font-size: 0.95rem; font-weight: 800; cursor: pointer; margin-top: 8px;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-integrated-snap:active { transform: scale(0.95); }
+
+    .physicality-card {
+      background: #0f0a1c; border: 1px solid #2e1065; border-radius: 14px;
+      padding: 12px; margin-bottom: 14px;
+    }
+    .meter-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--subtext); margin-bottom: 2px; }
+    .meter-bar-bg { height: 8px; background: #2e1065; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+    .meter-bar-fill { height: 100%; width: 0%; transition: width 0.05s ease-out; }
+    .fill-bass { background: linear-gradient(90deg, #8b5cf6, #ec4899); }
+    .fill-total { background: linear-gradient(90deg, #10b981, #f59e0b, #f43f5e); }
+
+    .layer-display {
+      background: #0f0a1c; border-radius: 12px; padding: 10px; margin-bottom: 14px; border: 1px solid #2e1065;
+    }
+    .layer-row { display: flex; justify-content: space-between; font-size: 0.78rem; padding: 4px 0; border-bottom: 1px solid #261047; }
+    .layer-row:last-child { border-bottom: none; }
+
+    .controls-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .btn-ctrl {
+      background: #251242; color: var(--text); border: 1px solid #4c1d95;
+      padding: 12px 4px; border-radius: 12px; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .btn-ctrl:active { transform: scale(0.95); }
+    .btn-ctrl .sub { font-size: 0.62rem; font-weight: 400; color: var(--subtext); }
+
+    .sticky-stop-bar {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      background: rgba(11, 7, 17, 0.96) !important;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 2px solid #f43f5e !important;
+      padding: 10px 16px !important;
+      display: flex !important;
+      justify-content: center !important;
+      z-index: 999999 !important;
+      box-sizing: border-box !important;
+    }
+    .btn-sticky-stop {
+      max-width: 500px; width: 100%;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff; border: none; padding: 14px; border-radius: 12px;
+      font-size: 1rem; font-weight: 900; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5);
+      display: flex; justify-content: center; align-items: center; gap: 8px;
+    }
+    .btn-sticky-stop:active { transform: scale(0.96); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🏔️ MFE Denver Altitude</h1>
+    <div class="subtitle">Mile-High Western Club Engine • 5280 Pulse</div>
+
+    <button class="btn-start" id="start-btn" onclick="mfe.startApp()">▶️ START ENGINE</button>
+    <span class="status-badge" id="status-badge">Tap 'START ENGINE' to begin</span>
+
+    <div class="snap-section">
+      <button class="btn-hard-bang" onclick="mfe.triggerHardBangSFX()">
+        💥 HARD SNAP (CLUB SOUND EFFECT)
+      </button>
+      <div style="font-size: 0.65rem; color: var(--subtext); margin: 4px 0 10px 0;">
+        Fires an instant sub-bass explosion + machine echo overlay!
+      </div>
+
+      <button class="btn-integrated-snap" onclick="mfe.triggerIntegratedSnap()">
+        ⚡ INTEGRATED SNAP (BEAT DROP & RIFF)
+      </button>
+      <div style="font-size: 0.65rem; color: var(--subtext); margin-top: 4px;">
+        Aligns Western club stems for maximum floor impact & triggers vocal drops!
+      </div>
+    </div>
+
+    <div class="physicality-card">
+      <div class="meter-label"><span>Sub-Bass Floor (122 BPM)</span><span id="txt-bass">0%</span></div>
+      <div class="meter-bar-bg"><div class="meter-bar-fill fill-bass" id="bar-bass"></div></div>
+      <div class="meter-label" style="font-weight:700; color:#fff;"><span>DENVER CLUB IMPACT</span><span id="txt-total">0%</span></div>
+      <div class="meter-bar-bg"><div class="meter-bar-fill fill-total" id="bar-total"></div></div>
+    </div>
+
+    <div class="layer-display">
+      <div class="layer-row"><span style="color:#f59e0b; font-weight:700;">BEAT / CLUB FLOOR</span><span id="lbl-beat" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#f43f5e; font-weight:700;">ANCHOR (VOCAL)</span><span id="lbl-anchor" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#8b5cf6; font-weight:700;">LEAD (VOCAL)</span><span id="lbl-lead" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#38bdf8; font-weight:700;">COUNTER (VOCAL)</span><span id="lbl-counter" style="color:var(--subtext);">Muted</span></div>
+      <div class="layer-row"><span style="color:#10b981; font-weight:700;">ECHO (VOCAL)</span><span id="lbl-echo" style="color:var(--subtext);">Muted</span></div>
+    </div>
+
+    <div class="controls-grid">
+      <button class="btn-ctrl" onclick="mfe.addLayer()">➕ MORE <span class="sub">+1 Stream</span></button>
+      <button class="btn-ctrl" onclick="mfe.removeLayer()">➖ LESS <span class="sub">-1 Stream</span></button>
+      <button class="btn-ctrl" onclick="mfe.swapStems()">🔀 DIFFERENT <span class="sub">Shuffle Once</span></button>
+    </div>
+  </div>
+
+  <div class="sticky-stop-bar">
+    <button class="btn-sticky-stop" onclick="mfe.stopAll()">
+      🛑 STOP ALL (Silence)
+    </button>
+  </div>
+
+  <script>
+    class MFEDenverEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.analyser = null;
+        this.beatBuffers = [];
+        this.vocalBuffers = [];
+        this.activeRoles = new Set();
+        this.activeNodes = { beat: null, anchor: null, lead: null, counter: null, echo: null };
+        this.layerOrder = ['anchor', 'lead', 'counter', 'echo'];
+        this.panConfig = {
+          beat: { pan: 0.0, el: 'lbl-beat' },
+          anchor: { pan: 0.0, el: 'lbl-anchor' },
+          lead: { pan: -0.30, el: 'lbl-lead' },
+          counter: { pan: 0.40, el: 'lbl-counter' },
+          echo: { pan: -0.55, el: 'lbl-echo' }
+        };
+
+        this.baseUrl = 'https://raw.githubusercontent.com/curtisbob55-da-man/Mondegreen-Familiarity-/main/';
+        
+        // Loads from your new denver_beats folder
+        this.beatManifest = [
+          { id: 'db1', name: 'High Country Pulse', path: 'denver_beats/beat1.mp3' },
+          { id: 'db2', name: 'Mile-High Horizon', path: 'denver_beats/beat2.mp3' },
+          { id: 'db3', name: 'Colfax Neon Drive', path: 'denver_beats/beat3.mp3' },
+          { id: 'db4', name: 'Red Rocks Echo', path: 'denver_beats/beat4.mp3' },
+          { id: 'db5', name: 'Larimer Street Stomp', path: 'denver_beats/beat5.mp3' },
+          { id: 'db6', name: 'Front Range Drift', path: 'denver_beats/beat6.mp3' },
+          { id: 'db7', name: 'Capitol Hill After Hours', path: 'denver_beats/beat7.mp3' },
+          { id: 'db8', name: 'Continental Divide', path: 'denver_beats/beat8.mp3' },
+          { id: 'db9', name: 'Golden Sunset Rhythm', path: 'denver_beats/beat9.mp3' },
+          { id: 'db10', name: 'High Altitude Anthem', path: 'denver_beats/beat10.mp3' }
+        ];
+
+        // Loads from your new denver_vocals folder
+        this.vocalManifest = [
+          { id: 'dv1', name: 'High Country Vocal', path: 'denver_vocals/vocal1.mp3' },
+          { id: 'dv2', name: 'Mile-High Horizon Vocal', path: 'denver_vocals/vocal2.mp3' },
+          { id: 'dv3', name: 'Colfax Neon Vocal', path: 'denver_vocals/vocal3.mp3' },
+          { id: 'dv4', name: 'Red Rocks Echo Vocal', path: 'denver_vocals/vocal4.mp3' },
+          { id: 'dv5', name: 'Larimer Stomp Vocal', path: 'denver_vocals/vocal5.mp3' },
+          { id: 'dv6', name: 'Front Range Drift Vocal', path: 'denver_vocals/vocal6.mp3' },
+          { id: 'dv7', name: 'Capitol Hill Vocal', path: 'denver_vocals/vocal7.mp3' },
+          { id: 'dv8', name: 'Continental Divide Vocal', path: 'denver_vocals/vocal8.mp3' },
+          { id: 'dv9', name: 'Golden Sunset Vocal', path: 'denver_vocals/vocal9.mp3' },
+          { id: 'dv10', name: '5280 Anthem Vocal', path: 'denver_vocals/vocal10.mp3' }
+        ];
+      }
+
+      initContext() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+          this.masterGain = this.ctx.createGain();
+          this.analyser = this.ctx.createAnalyser();
+          this.analyser.fftSize = 512;
+
+          this.masterGain.connect(this.analyser);
+          this.analyser.connect(this.ctx.destination);
+
+          this.startPhysicalityLoop();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      startPhysicalityLoop() {
+        const freqData = new Uint8Array(this.analyser.frequencyBinCount);
+        const updateMeters = () => {
+          if (this.activeRoles.size > 0) {
+            this.analyser.getByteFrequencyData(freqData);
+
+            let bassSum = 0;
+            for (let i = 0; i < 10; i++) bassSum += freqData[i];
+            let bassScore = Math.min(100, Math.round((bassSum / (10 * 255)) * 120));
+
+            let totalSum = 0;
+            for (let i = 0; i < freqData.length; i++) totalSum += freqData[i];
+            let totalImpact = Math.min(100, Math.round((totalSum / (freqData.length * 255)) * 150));
+
+            document.getElementById('bar-bass').style.width = bassScore + '%';
+            document.getElementById('txt-bass').innerText = bassScore + '%';
+            document.getElementById('bar-total').style.width = totalImpact + '%';
+            document.getElementById('txt-total').innerText = totalImpact + '%';
+          } else {
+            document.getElementById('bar-bass').style.width = '0%';
+            document.getElementById('txt-bass').innerText = '0%';
+            document.getElementById('bar-total').style.width = '0%';
+            document.getElementById('txt-total').innerText = '0%';
+          }
+          requestAnimationFrame(updateMeters);
+        };
+        requestAnimationFrame(updateMeters);
+      }
+
+      triggerHardBangSFX() {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const subOsc = this.ctx.createOscillator();
+        const subGain = this.ctx.createGain();
+        subOsc.type = 'sine';
+        subOsc.frequency.setValueAtTime(160, now);
+        subOsc.frequency.exponentialRampToValueAtTime(25, now + 0.35);
+
+        subGain.gain.setValueAtTime(1.2, now);
+        subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+        subOsc.connect(subGain);
+        subGain.connect(this.masterGain);
+        subOsc.start(now);
+        subOsc.stop(now + 0.4);
+
+        const dur = 0.28;
+        const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * dur, this.ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length * 0.22));
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.setValueAtTime(950, now);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.85, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.masterGain);
+        noise.start(now);
+
+        setTimeout(() => {
+          if (!this.ctx) return;
+          const now2 = this.ctx.currentTime;
+          
+          const chimeOsc = this.ctx.createOscillator();
+          const chimeGain = this.ctx.createGain();
+
+          chimeOsc.type = 'triangle';
+          chimeOsc.frequency.setValueAtTime(587.33, now2);
+          chimeOsc.frequency.exponentialRampToValueAtTime(293.66, now2 + 0.25);
+
+          chimeGain.gain.setValueAtTime(0.45, now2);
+          chimeGain.gain.exponentialRampToValueAtTime(0.001, now2 + 0.25);
+
+          chimeOsc.connect(chimeGain);
+          chimeGain.connect(this.masterGain);
+          chimeOsc.start(now2);
+          chimeOsc.stop(now2 + 0.25);
+        }, 120);
+      }
+
+      triggerIntegratedSnap() {
+        this.initContext();
+        if (!this.activeRoles.has('beat')) {
+          this.activeRoles.add('beat');
+        }
+        this.addLayer();
+
+        ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
+          if (this.activeRoles.has(role)) this.playRoleNext(role);
+        });
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `⚡ Denver Snap! Western Beats Aligned`;
+      }
+
+      calculateRMS(buffer) {
+        const data = buffer.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 100) sum += data[i] * data[i];
+        return Math.sqrt(sum / (data.length / 100));
+      }
+
+      sliceAudioBuffer(fullBuffer, fileName, stemId, numSlices = 6) {
+        const slices = [];
+        const sliceSamples = Math.floor(fullBuffer.length / numSlices);
+        for (let i = 0; i < numSlices; i++) {
+          const sliceBuffer = this.ctx.createBuffer(fullBuffer.numberOfChannels, sliceSamples, fullBuffer.sampleRate);
+          for (let ch = 0; ch < fullBuffer.numberOfChannels; ch++) {
+            sliceBuffer.getChannelData(ch).set(fullBuffer.getChannelData(ch).subarray(i * sliceSamples, (i + 1) * sliceSamples));
+          }
+          if (this.calculateRMS(sliceBuffer) > 0.005) {
+            slices.push({ id: `${stemId}_s${i+1}`, name: `${fileName} [S${i + 1}]`, buffer: sliceBuffer });
+          }
+        }
+        return slices;
+      }
+
+      async fetchAndDecode(path) {
+        try {
+          const res = await fetch(encodeURI(this.baseUrl + path));
+          const arrayBuf = await res.arrayBuffer();
+          return await this.ctx.decodeAudioData(arrayBuf);
+        } catch(e) { return null; }
+      }
+
+      async startApp() {
+        this.initContext();
+        document.getElementById('start-btn').style.display = 'none';
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge loading';
+        statusEl.innerText = '⚡ Loading Denver Altitude Stems...';
+
+        const firstVocal = await this.fetchAndDecode(this.vocalManifest[0].path);
+        if (firstVocal) this.vocalBuffers.push(...this.sliceAudioBuffer(firstVocal, this.vocalManifest[0].name, 'dv1'));
+
+        const firstBeat = await this.fetchAndDecode(this.beatManifest[0].path);
+        if (firstBeat) this.beatBuffers.push(...this.sliceAudioBuffer(firstBeat, this.beatManifest[0].name, 'db1'));
+
+        if (this.vocalBuffers.length > 0 && !this.activeRoles.has('anchor')) {
+          this.activeRoles.add('anchor');
+          this.playRoleNext('anchor');
+        }
+
+        this.loadRemainingBackground();
+      }
+
+      async loadRemainingBackground() {
+        for (let i = 1; i < this.vocalManifest.length; i++) {
+          const v = await this.fetchAndDecode(this.vocalManifest[i].path);
+          if (v) this.vocalBuffers.push(...this.sliceAudioBuffer(v, this.vocalManifest[i].name, `dv${i+1}`));
+        }
+
+        for (let i = 1; i < this.beatManifest.length; i++) {
+          const b = await this.fetchAndDecode(this.beatManifest[i].path);
+          if (b) this.beatBuffers.push(...this.sliceAudioBuffer(b, this.beatManifest[i].name, `db${i+1}`));
+        }
+
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge active';
+        statusEl.innerText = `Denver Altitude Active • ${this.vocalBuffers.length} Vocal & ${this.beatBuffers.length} Beat Slices`;
+      }
+
+      getRandomBuffer(role) {
+        if (role === 'beat') {
+          return this.beatBuffers.length > 0 ? this.beatBuffers[Math.floor(Math.random() * this.beatBuffers.length)] : null;
+        } else {
+          return this.vocalBuffers.length > 0 ? this.vocalBuffers[Math.floor(Math.random() * this.vocalBuffers.length)] : null;
+        }
+      }
+
+      stopRoleNode(role) {
+        if (this.activeNodes[role]) {
+          try {
+            this.activeNodes[role].source.onended = null;
+            this.activeNodes[role].source.stop();
+          } catch(e) {}
+          this.activeNodes[role] = null;
+        }
+      }
+
+      playRoleNext(role) {
+        if (!this.activeRoles.has(role)) return;
+        this.stopRoleNode(role);
+
+        const stem = this.getRandomBuffer(role);
+        if (!stem) return;
+
+        const config = this.panConfig[role];
+        const source = this.ctx.createBufferSource();
+        source.buffer = stem.buffer;
+
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (panner) panner.pan.value = config.pan;
+
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.value = (role === 'beat') ? 0.75 : 0.85;
+
+        if (panner) { source.connect(panner); panner.connect(gainNode); }
+        else { source.connect(gainNode); }
+
+        gainNode.connect(this.masterGain);
+
+        source.onended = () => { if (this.activeRoles.has(role)) this.playRoleNext(role); };
+        source.start(0);
+
+        this.activeNodes[role] = { source, gainNode };
+        document.getElementById(config.el).innerText = stem.name;
+      }
+
+      addLayer() {
+        this.initContext();
+        for (let role of ['anchor', 'lead', 'counter', 'echo']) {
+          if (!this.activeRoles.has(role)) {
+            this.activeRoles.add(role);
+            this.playRoleNext(role);
+            break;
+          }
+        }
+      }
+
+      removeLayer() {
+        for (let role of ['echo', 'counter', 'lead', 'anchor']) {
+          if (this.activeRoles.has(role)) {
+            this.activeRoles.delete(role);
+            this.stopRoleNode(role);
+            document.getElementById(this.panConfig[role].el).innerText = 'Muted';
+            break;
+          }
+        }
+      }
+
+      swapStems() {
+        ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
+          if (this.activeRoles.has(role)) this.playRoleNext(role);
+        });
+      }
+
+      stopAll() {
+        this.activeRoles.clear();
+        ['beat', 'anchor', 'lead', 'counter', 'echo'].forEach(role => {
+          this.stopRoleNode(role);
+          document.getElementById(this.panConfig[role].el).innerText = 'Stopped';
+        });
+        const statusEl = document.getElementById('status-badge');
+        statusEl.className = 'status-badge';
+        statusEl.innerText = 'Stopped';
+      }
+    }
+
+    const mfe = new MFEDenverEngine();
+  </script>
+</body>
+</html>
